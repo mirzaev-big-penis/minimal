@@ -38,10 +38,8 @@ class model
      *
      * @param mixed $name Название
      * @param mixed $value Значение
-     *
-     * @return void
      */
-    public function __set($name, $value): void
+    public function __set(string $name, mixed $value): void
     {
         if ($name === 'db') {
             if (!isset($this->db)) {
@@ -58,11 +56,9 @@ class model
     /**
      * Прочитать свойство
      *
-     * @param mixed $name Название
-     *
-     * @return mixed
+     * @param string $name Название
      */
-    public function __get($name)
+    public function __get(string $name): mixed
     {
         if ($name === 'db') {
             return $this->db;
@@ -76,10 +72,8 @@ class model
      * Проверить свойство на инициализированность
      *
      * @param string $name Название
-     *
-     * @return mixed
      */
-    public function __isset(string $name)
+    public function __isset(string $name): bool
     {
         if ($name === 'db') {
             return isset($this->db);

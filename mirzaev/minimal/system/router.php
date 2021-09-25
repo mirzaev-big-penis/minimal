@@ -49,8 +49,6 @@ final class router
      *
      * @param string $route Маршрут
      * @param string $controller Контроллер
-     *
-     * @return void
      */
     public static function handle(string $uri = null): void
     {
@@ -104,6 +102,9 @@ final class router
         echo self::error();
     }
 
+    /**
+     * Контроллер ошибок
+     */
     private static function error(): ?string
     {
         if (
