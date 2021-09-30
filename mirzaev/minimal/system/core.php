@@ -5,75 +5,92 @@ declare(strict_types=1);
 namespace mirzaev\minimal;
 
 use mirzaev\minimal\router;
+use mirzaev\minimal\controller;
+use mirzaev\minimal\model;
 
-use PDO;
-use PDOException;
-
-use Exception;
+use exception;
 
 /**
  * Ядро
  *
  * @package mirzaev\minimal
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>
+ *
+ * @todo
+ * 1. Добавить __isset() и __unset()
  */
 final class core
 {
     /**
-     * @var PDO $db Соединение с базой данных
+     * Соединение с базой данных
      */
-    private static PDO $db;
+    private object $storage;
 
     /**
-     * @var router $router Маршрутизатор
+     * Маршрутизатор
      */
-    private static router $router;
+    private router $router;
 
     /**
-     * @var string $path Корневая директория
+     * Контроллер
      */
-    private static string $path;
+    private controller $controller;
 
     /**
-     * @var string $namespace Пространство имён
+     * Модель
      */
-    private static string $namespace;
+    private model $model;
 
     /**
-     * @var string $postfix_controller Постфикс контроллеров
+     * Пространство имён проекта
+     *
+     * Используется для поиска файлов по спецификации PSR-4
      */
-    private static string $postfix_controller = '_controller';
-
-    /**
-     * @var string $postfix_model Постфикс моделей
-     */
-    private static string $postfix_model = '_model';
+    private string $namespace;
 
     /**
      * Конструктор
      *
-     * @param string $db
-     * @param string $login
-     * @param string $password
+     * @param object $storage Хранилище
      * @param router $router Маршрутизатор
+     * @param string $uri Маршрут
      */
-    public function __construct(string $db = 'mysql:dbname=db;host=127.0.0.1', string $login = '', string $password = '', router $router = null)
+    public function __construct(object $storage = null, router $router = null, controller $controller = null, model $model = null, string $namespace = null)
     {
-        // Инициализация маршрутизатора
-        self::$router = $router ?? new router;
+        if (isset($storage)) {
+            // Переданы данные для хранилища
 
-        // Инициализация корневого пространства имён
-        self::$namespace = __NAMESPACE__;
-
-        try {
-            // Инициализация PDO
-            self::$db = new PDO($db, $login, $password);
-        } catch (PDOException $e) {
-            throw new Exception('Проблемы при соединении с базой данных: ' . $e->getMessage(), $e->getCode());
+            // Проверка и запись
+            $this->__set('storage', $storage);
         }
 
-        // Обработка запроса
-        self::$router::handle();
+        if (isset($router)) {
+            // Переданы данные для маршрутизатора
+
+            // Проверка и запись
+            $this->__set('router', $router);
+        }
+
+        if (isset($controller)) {
+            // Переданы данные для контроллера
+
+            // Проверка и запись
+            $this->__set('controller', $controller);
+        }
+
+        if (isset($model)) {
+            // Переданы данные для модели
+
+            // Проверка и запись
+            $this->__set('model', $model);
+        }
+
+        if (isset($namespace)) {
+            // Переданы данные для пространства имён
+
+            // Проверка и запись
+            $this->__set('namespace', $namespace);
+        }
     }
 
     /**
@@ -82,60 +99,218 @@ final class core
      */
     public function __destruct()
     {
-        // Закрытие соединения
+    }
+
+    public function start(string $uri = null): ?string
+    {
+        // Обработка запроса
+        return $this->__get('router')->handle($uri, core: $this);
     }
 
     /**
-     * Прочитать/записать корневую директорию
+     * Записать свойство
      *
-     * @var string|null $path Путь
-     *
-     * @return string
+     * @param string $name Название
+     * @param mixed $value Значение
      */
-    public static function path(string $path = null): string
+    public function __set(string $name, mixed $value = null): void
     {
-        return self::$path = (string) ($path ?? self::$path);
+        match ($name) {
+            'storage', 'db', 'database' => (function () use ($value) {
+                if (isset($this->storage)) {
+                    // Свойство уже было инициализировано
+
+                    // Выброс исключения (неудача)
+                    throw new exception('Запрещено реинициализировать хранилище ($this->storage)', 500);
+                } else {
+                    // Свойство ещё не было инициализировано
+
+                    if (is_object($value)) {
+                        // Передано подходящее значение
+
+                        // Запись свойства (успех)
+                        $this->storage = $value;
+                    } else {
+                        // Передано неподходящее значение
+
+                        // Выброс исключения (неудача)
+                        throw new exception('Хранилище ($this->storage) должно хранить объект', 500);
+                    }
+                }
+            })(),
+            'router' => (function () use ($value) {
+                if (isset($this->router)) {
+                    // Свойство уже было инициализировано
+
+                    // Выброс исключения (неудача)
+                    throw new exception('Запрещено реинициализировать маршрутизатор ($this->router)', 500);
+                } else {
+                    // Свойство ещё не было инициализировано
+
+                    if ($value instanceof router) {
+                        // Передано подходящее значение
+
+                        // Запись свойства (успех)
+                        $this->router = $value;
+                    } else {
+                        // Передано неподходящее значение
+
+                        // Выброс исключения (неудача)
+                        throw new exception('Маршрутизатор ($this->router) должен хранить инстанцию "mirzaev\minimal\router"', 500);
+                    }
+                }
+            })(),
+            'controller' => (function () use ($value) {
+                if (isset($this->controller)) {
+                    // Свойство уже было инициализировано
+
+                    // Выброс исключения (неудача)
+                    throw new exception('Запрещено реинициализировать контроллер ($this->controller)', 500);
+                } else {
+                    // Свойство ещё не было инициализировано
+
+                    if ($value instanceof controller) {
+                        // Передано подходящее значение
+
+                        // Запись свойства (успех)
+                        $this->controller = $value;
+                    } else {
+                        // Передано неподходящее значение
+
+                        // Выброс исключения (неудача)
+                        throw new exception('Контроллер ($this->controller) должен хранить инстанцию "mirzaev\minimal\controller"', 500);
+                    }
+                }
+            })(),
+            'model' => (function () use ($value) {
+                if (isset($this->model)) {
+                    // Свойство уже было инициализировано
+
+                    // Выброс исключения (неудача)
+                    throw new exception('Запрещено реинициализировать модель ($this->model)', 500);
+                } else {
+                    // Свойство ещё не было инициализировано
+
+                    if ($value instanceof model) {
+                        // Передано подходящее значение
+
+                        // Запись свойства (успех)
+                        $this->model = $value;
+                    } else {
+                        // Передано неподходящее значение
+
+                        // Выброс исключения (неудача)
+                        throw new exception('Модель ($this->model) должен хранить инстанцию "mirzaev\minimal\model"', 500);
+                    }
+                }
+            })(),
+            'namespace' => (function () use ($value) {
+                if (isset($this->namespace)) {
+                    // Свойство уже было инициализировано
+
+                    // Выброс исключения (неудача)
+                    throw new exception('Запрещено реинициализировать пространство имён ($this->namespace)', 500);
+                } else {
+                    // Свойство ещё не было инициализировано
+
+                    if (is_string($value)) {
+                        // Передано подходящее значение
+
+                        // Запись свойства (успех)
+                        $this->namespace = $value;
+                    } else {
+                        // Передано неподходящее значение
+
+                        // Выброс исключения (неудача)
+                        throw new exception('Пространство имён ($this->namespace) должно хранить строку', 500);
+                    }
+                }
+            })(),
+            default => throw new exception("Свойство \"\$$name\" не найдено", 404)
+        };
     }
 
     /**
-     * Прочитать/записать соединение с базой данных
+     * Прочитать свойство
      *
-     * @var PDO|null $db Соединение с базой данных
+     * Записывает значение по умолчанию, если свойство не инициализировано
      *
-     * @return PDO
+     * @param string $name Название
+     *
+     * @return mixed Содержимое
      */
-    public static function db(PDO $db = null): PDO
+    public function __get(string $name): mixed
     {
-        return self::$db = $db ?? self::$db;
+        return match ($name) {
+            'storage', 'db', 'database' => $this->storage ?? throw new exception("Свойство \"\$$name\" не инициализировано", 500),
+            'router' => (function () {
+                if (isset($this->router)) {
+                    // Свойство уже было инициализировано
+                } else {
+                    // Свойство ещё не было инициализировано
+
+                    // Инициализация со значением по умолчанию
+                    $this->__set('router', new router);
+                }
+
+                // Возврат (успех)
+                return $this->router;
+            })(),
+            'controller' => (function () {
+                if (isset($this->controller)) {
+                    // Свойство уже было инициализировано
+                } else {
+                    // Свойство ещё не было инициализировано
+
+                    // Инициализация со значением по умолчанию
+                    $this->__set('controller', new controller);
+                }
+
+                // Возврат (успех)
+                return $this->controller;
+            })(),
+            'model' => (function () {
+                if (isset($this->model)) {
+                    // Свойство уже было инициализировано
+                } else {
+                    // Свойство ещё не было инициализировано
+
+                    // Инициализация со значением по умолчанию
+                    $this->__set('model', new model);
+                }
+
+                // Возврат (успех)
+                return $this->model;
+            })(),
+            'namespace' => $this->namespace ?? throw new exception("Свойство \"\$$name\" не инициализировано", 500),
+            default => throw new exception("Свойство \"\$$name\" не найдено", 404)
+        };
     }
 
     /**
-     * Прочитать постфикс контроллеров
+     * Проверить свойство на инициализированность
      *
-     * @return string|null
+     * @param string $name Название
      */
-    public static function controllerPostfix(): ?string
+    public function __isset(string $name): bool
     {
-        return self::$postfix_controller;
+        return match ($name) {
+            default => isset($this->{$name})
+        };
     }
 
     /**
-     * Прочитать постфикс моделей
+     * Удалить свойство
      *
-     * @return string|null
+     * @param string $name Название
      */
-    public static function modelPostfix(): ?string
+    public function __unset(string $name): void
     {
-        return self::$postfix_model;
-    }
-
-    /**
-     * Прочитать пространство имён
-     *
-     * @return string|null
-     */
-    public static function namespace(): ?string
-    {
-        return self::$namespace;
+        match ($name) {
+            default => (function () use ($name) {
+                // Удаление
+                unset($this->{$name});
+            })()
+        };
     }
 }
