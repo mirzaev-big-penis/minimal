@@ -41,21 +41,6 @@ class controller
     }
 
     /**
-     * Отрисовка шаблона
-     *
-     * @param string $route Маршрут
-     */
-    public function view(string $route)
-    {
-        // Чтение представления по шаблону пути: "/views/[controller]/index
-        // Никаких слоёв и шаблонизаторов
-        // Не стал в ядре записывать путь до шаблонов
-        if (file_exists($view = core::path() . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . $route . DIRECTORY_SEPARATOR . 'index.html')) {
-            include $view;
-        }
-    }
-
-    /**
      * Записать свойство
      *
      * @param string $name Название
