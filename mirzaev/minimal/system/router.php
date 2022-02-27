@@ -93,7 +93,7 @@ final class router
                         // Переменная
 
                         // Запись в массив переменных и перезапись переменной значением из ссылки
-                        $directory = $data['vars'][$directory] = $directories[$index];
+                        $directory = $data['vars'][trim($directory, '$')] = $directories[$index];
                     }
                 }
 
