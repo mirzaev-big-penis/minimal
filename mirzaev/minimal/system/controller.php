@@ -50,7 +50,7 @@ class controller
     {
         match ($name) {
             'model' => (function () use ($value) {
-                if (isset($this->model)) {
+                if ($this->__isset('model')) {
                     // Свойство уже было инициализировано
 
                     // Выброс исключения (неудача)
@@ -72,7 +72,7 @@ class controller
                 }
             })(),
             'view' => (function () use ($value) {
-                if (isset($this->view)) {
+                if ($this->__isset('view')) {
                     // Свойство уже было инициализировано
 
                     // Выброс исключения (неудача)
@@ -94,7 +94,7 @@ class controller
                 }
             })(),
             'postfix' => (function () use ($value) {
-                if (isset($this->postfix)) {
+                if ($this->__isset('postfix')) {
                     // Свойство уже было инициализировано
 
                     // Выброс исключения (неудача)
@@ -132,7 +132,7 @@ class controller
     {
         return match ($name) {
             'postfix' => (function () {
-                if (isset($this->postfix)) {
+                if ($this->__isset('postfix')) {
                     // Свойство уже было инициализировано
                 } else {
                     // Свойство ещё не было инициализировано

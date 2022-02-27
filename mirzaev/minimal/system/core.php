@@ -117,7 +117,7 @@ final class core
     {
         match ($name) {
             'storage', 'db', 'database' => (function () use ($value) {
-                if (isset($this->storage)) {
+                if ($this->__isset('storage')) {
                     // Свойство уже было инициализировано
 
                     // Выброс исключения (неудача)
@@ -139,7 +139,7 @@ final class core
                 }
             })(),
             'router' => (function () use ($value) {
-                if (isset($this->router)) {
+                if ($this->__isset('router')) {
                     // Свойство уже было инициализировано
 
                     // Выброс исключения (неудача)
@@ -161,7 +161,7 @@ final class core
                 }
             })(),
             'controller' => (function () use ($value) {
-                if (isset($this->controller)) {
+                if ($this->__isset('controller')) {
                     // Свойство уже было инициализировано
 
                     // Выброс исключения (неудача)
@@ -183,7 +183,7 @@ final class core
                 }
             })(),
             'model' => (function () use ($value) {
-                if (isset($this->model)) {
+                if ($this->__isset('model')) {
                     // Свойство уже было инициализировано
 
                     // Выброс исключения (неудача)
@@ -205,7 +205,7 @@ final class core
                 }
             })(),
             'namespace' => (function () use ($value) {
-                if (isset($this->namespace)) {
+                if ($this->__isset('namespace')) {
                     // Свойство уже было инициализировано
 
                     // Выброс исключения (неудача)
@@ -244,7 +244,7 @@ final class core
         return match ($name) {
             'storage', 'db', 'database' => $this->storage ?? throw new exception("Свойство \"\$$name\" не инициализировано", 500),
             'router' => (function () {
-                if (isset($this->router)) {
+                if ($this->__isset('router')) {
                     // Свойство уже было инициализировано
                 } else {
                     // Свойство ещё не было инициализировано
@@ -257,7 +257,7 @@ final class core
                 return $this->router;
             })(),
             'controller' => (function () {
-                if (isset($this->controller)) {
+                if ($this->__isset('controller')) {
                     // Свойство уже было инициализировано
                 } else {
                     // Свойство ещё не было инициализировано
@@ -270,7 +270,7 @@ final class core
                 return $this->controller;
             })(),
             'model' => (function () {
-                if (isset($this->model)) {
+                if ($this->__isset('model')) {
                     // Свойство уже было инициализировано
                 } else {
                     // Свойство ещё не было инициализировано

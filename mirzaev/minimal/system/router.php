@@ -56,29 +56,68 @@ final class router
         // Инициализация URL
         $url = parse_url($uri, PHP_URL_PATH);
 
-        // Сортировка массива маршрутов от большего ключа к меньшему
+        // Универсализация
+        $url = self::universalization($url);
+
+        // Сортировка массива маршрутов от большего ключа к меньшему (кешируется)
         krsort($this->routes);
 
-        foreach ($this->routes as $key => $value) {
+        // Поиск директорий в ссылке
+        preg_match_all('/[^\/]+/', $url, $directories);
+
+        // Инициализация директорий
+        $directories = $directories[0];
+
+        foreach ($this->routes as $route => $data) {
             // Перебор маршрутов
 
-            // Если не записан "/" в начале, то записать
-            $route_name = preg_replace('/^([^\/])/', '/$1', $key);
-            $url = preg_replace('/^([^\/])/', '/$1', $url);
+            // Универсализация
+            $route = self::universalization($route);
 
-            // Если не записан "/" в конце, то записать
-            $route_name = preg_replace('/([^\/])$/', '$1/', $route_name);
-            $url = preg_replace('/([^\/])$/', '$1/', $url);
+            // Поиск директорий в маршруте
+            preg_match_all('/[^\/]+/', $route, $data['directories']);
 
-            if (mb_stripos($route_name, $url, 0, "UTF-8") === 0 && mb_strlen($route_name, 'UTF-8') <=  mb_strlen($url, 'UTF-8')) {
-                // Найден маршрут, а так же его длина не меньше длины запрошенного URL
+            // Инициализация директорий
+            $data['directories'] = $data['directories'][0];
 
-                // Инициализация маршрута
-                $route = $value[$_SERVER["REQUEST_METHOD"] ?? 'GET'];
+            if (count($directories) === count($data['directories'])) {
+                // Совпадает количество директорий у ссылки и маршрута (вероятно эта ссылка на этот маршрут)
 
-                // Выход из цикла (успех)
-                break;
+                // Инициализация массива переменных
+                $vars = [];
+
+                foreach ($data['directories'] as $index => &$directory) {
+                    // Перебор найденных переменных
+
+                    if (preg_match('/\$([a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]+)/', $directory) === 1) {
+                        // Переменная
+
+                        // Запись в массив переменных и перезапись переменной значением из ссылки
+                        $directory = $vars[$directory] = $directories[$index];
+                    }
+                }
+
+                // Реиницилазция маршрута
+                $route = self::universalization(implode('/', $data['directories']));
+
+                if (mb_stripos($route, $url, 0, "UTF-8") === 0 && mb_strlen($route, 'UTF-8') <=  mb_strlen($url, 'UTF-8')) {
+                    // Найден маршрут, а так же его длина не меньше длины запрошенного URL
+
+                    // Инициализация маршрута
+                    if (array_key_exists($_SERVER["REQUEST_METHOD"], $data)) {
+                        // Найдены настройки для полученного типа запроса
+
+                        // Запись маршрута
+                        $route = $data[$_SERVER["REQUEST_METHOD"]];
+                    }
+
+                    // Выход из цикла
+                    break;
+                }
             }
+
+            // Деинициализация
+            unset($route);
         }
 
         if (!empty($route)) {
@@ -115,11 +154,15 @@ final class router
 
     /**
      * Контроллер ошибок
+     *
+     * @param core $core Ядро фреймворка
+     *
+     * @return string|null HTML-документ с ошибкой
      */
     private function error(core $core = null): ?string
     {
         if (
-            class_exists($class = (new ReflectionClass(core::class))->getNamespaceName() . '\\controllers\\errors' . $core->controller->postfix ?? (new core())->controller->postfix) &&
+            class_exists($class = '\\' . ($core->namespace ?? (new ReflectionClass(core::class))->getNamespaceName()) . '\\controllers\\errors' . $core->controller->postfix ?? (new core())->controller->postfix) &&
             method_exists($class, $method = 'error404')
         ) {
             // Существует контроллер ошибок и метод для обработки ошибки
@@ -133,5 +176,23 @@ final class router
             // либо вызвать, но отображать в зависимости от включенного дебаг режима !!!!!!!!!!!!!!!!!!!! см. @todo
             return null;
         }
+    }
+
+    /**
+     * Универсализация URL
+     *
+     * @param string $url Ссылка
+     *
+     * @return string Универсализированная ссылка
+     */
+    private function universalization(string $url): string
+    {
+        // Если не записан "/" в начале, то записать
+        $url = preg_replace('/^([^\/])/', '/$1', $url);
+
+        // Если записан "/" в конце, то удалить
+        $url = preg_replace('/(.*)\/$/', '$1', $url);
+
+        return $url;
     }
 }

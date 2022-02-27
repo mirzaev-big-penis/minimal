@@ -67,7 +67,7 @@ class model
     {
         return match ($name) {
             'postfix' => (function() {
-                if (isset($this->postfix)) {
+                if ($this->__isset('postfix')) {
                     // Свойство уже было инициализировано
                 } else {
                     // Свойство ещё не было инициализировано
