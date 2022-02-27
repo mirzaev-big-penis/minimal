@@ -84,7 +84,7 @@ final class router
                 // Совпадает количество директорий у ссылки и маршрута (вероятно эта ссылка на этот маршрут)
 
                 // Инициализация массива переменных
-                $vars = [];
+                $data['vars'] = [];
 
                 foreach ($data['directories'] as $index => &$directory) {
                     // Перебор найденных переменных
@@ -93,7 +93,7 @@ final class router
                         // Переменная
 
                         // Запись в массив переменных и перезапись переменной значением из ссылки
-                        $directory = $vars[$directory] = $directories[$index];
+                        $directory = $data['vars'][$directory] = $directories[$index];
                     }
                 }
 
@@ -136,7 +136,7 @@ final class router
                     $controller->model = new $model;
                 }
 
-                if (empty($response = $controller->{$route['method']}($_REQUEST))) {
+                if (empty($response = $controller->{$route['method']}($data['vars'] + $_REQUEST))) {
                     // Не удалось получить ответ после обработки контроллера
 
                     // Возврат (неудача)
