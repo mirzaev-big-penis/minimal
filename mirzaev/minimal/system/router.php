@@ -139,7 +139,7 @@ final class router
                     $controller->model = new $model;
                 }
 
-                if (empty($response = $controller->{$route['method']}($data['vars'] + $_REQUEST))) {
+                if (empty($response = $controller->{$route['method']}($data['vars'] + $_REQUEST, $_FILES))) {
                     // Не удалось получить ответ после обработки контроллера
 
                     // Возврат (неудача)
