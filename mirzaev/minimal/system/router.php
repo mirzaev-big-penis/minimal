@@ -112,6 +112,11 @@ final class router
 
                         // Запись маршрута
                         $route = $data[$_SERVER["REQUEST_METHOD"]];
+                    } else {
+                        // Не найдены настройки для полученного типа запроса
+
+                        // Деинициализация
+                        unset($route);
                     }
 
                     // Выход из цикла
