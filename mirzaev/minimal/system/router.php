@@ -100,6 +100,9 @@ final class router
                 // Реиницилазция маршрута
                 $route = self::universalization(implode('/', $data['directories']));
 
+                // Маршрут оказался пустым
+                if (empty($route)) $route = '/';
+
                 if (mb_stripos($route, $url, 0, "UTF-8") === 0 && mb_strlen($route, 'UTF-8') <=  mb_strlen($url, 'UTF-8')) {
                     // Найден маршрут, а так же его длина не меньше длины запрошенного URL
 
@@ -191,7 +194,7 @@ final class router
         $url = preg_replace('/^([^\/])/', '/$1', $url);
 
         // Если записан "/" в конце, то удалить
-        $url = preg_replace('/(.*)\/$/', '$1', $url);
+        $url = preg_replace('/(.+)\/$/', '$1', $url);
 
         return $url;
     }
