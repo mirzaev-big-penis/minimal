@@ -1,13 +1,13 @@
 {
     "name": "mirzaev/minimal",
     "type": "framework",
-    "description": "Легковесный MVC фреймворк который следует твоим правилам, а не диктует свои",
+    "description": "Lightweight MVC framework that manages only the basic mechanisms, leaving the development of the programmer and not overloading the project",
     "keywords": [
         "mvc",
         "framework"
     ],
-    "homepage": "https://git.hood.su/mirzaev/minimal",
     "license": "WTFPL",
+    "homepage": "https://git.mirzaev.sexy/mirzaev/minimal",
     "authors": [
         {
             "name": "Arsen Mirzaev Tatyano-Muradovich",
@@ -17,14 +17,14 @@
         }
     ],
     "support": {
-        "docs": "https://git.hood.su/mirzaev/minimal/manual",
-        "issues": "https://git.hood.su/mirzaev/minimal/issues"
+        "docs": "https://git.mirzaev.sexy/mirzaev/minimal/wiki",
+        "issues": "https://git.mirzaev.sexy/mirzaev/minimal/issues"
     },
     "require": {
-        "php": "~8.0"
+        "php": "~8.1"
     },
     "suggest": {
-        "ext-PDO": "Для работы с базами данных на SQL (MySQL, PostreSQL...)"
+        "ext-PDO": "To work with SQL-based databases (MySQL, PostreSQL...)"
     },
     "autoload": {
         "psr-4": {
