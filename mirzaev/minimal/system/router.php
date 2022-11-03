@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal;
 
+// Файлы проекта
 use mirzaev\minimal\core;
 
+// Встроенные библиотеки
 use ReflectionClass;
 
 /**

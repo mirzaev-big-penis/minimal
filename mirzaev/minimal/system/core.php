@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal;
 
-use mirzaev\minimal\router;
-use mirzaev\minimal\controller;
-use mirzaev\minimal\model;
+// Файлы проекта
+use mirzaev\minimal\router,
+    mirzaev\minimal\controller,
+    mirzaev\minimal\model;
 
+// Встроенные библиотеки
 use exception;
 
 /**

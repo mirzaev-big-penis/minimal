@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal;
 
+// Файлы проекта
 use mirzaev\minimal\model;
 
-use Exception;
+// Встроенные библиотеки
+use exception;
 
 /**
  * Контроллер

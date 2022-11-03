@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal;
 
-use Exception;
+// Встроенные библиотеки
+use exception;
 
 /**
  * Модель
