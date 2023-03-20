@@ -4,7 +4,8 @@
     "description": "Lightweight MVC framework that manages only the basic mechanisms, leaving the development of the programmer and not overloading the project",
     "keywords": [
         "mvc",
-        "framework"
+        "framework",
+        "lightweight"
     ],
     "license": "WTFPL",
     "homepage": "https://git.mirzaev.sexy/mirzaev/minimal",
@@ -21,10 +22,7 @@
         "issues": "https://git.mirzaev.sexy/mirzaev/minimal/issues"
     },
     "require": {
-        "php": "~8.1"
-    },
-    "suggest": {
-        "ext-PDO": "To work with SQL-based databases (MySQL, PostreSQL...)"
+        "php": "~8.2"
     },
     "autoload": {
         "psr-4": {

@@ -18,164 +18,107 @@ use exception;
  */
 class controller
 {
-    /**
-     * Постфикс
-     */
-    private string $postfix = '_controller';
+  /**
+   * Постфикс
+   */
+  private const POSTFIX = '_controller';
 
-    /**
-     * Модель
-     */
-    protected model $model;
+  /**
+   * Инстанция модели
+   */
+  protected model $model;
 
-    /**
-     * Шаблонизатор представления
-     */
-    protected object $view;
+  /**
+   * Инстанция шаблонизатора представления
+   */
+  protected object $view;
 
-    /**
-     * Конструктор
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-    }
+  /**
+   * Конструктор
+   */
+  public function __construct()
+  {
+  }
 
-    /**
-     * Записать свойство
-     *
-     * @param string $name Название
-     * @param mixed $value Значение
-     */
-    public function __set(string $name, mixed $value = null): void
-    {
-        match ($name) {
-            'model' => (function () use ($value) {
-                if ($this->__isset('model')) {
-                    // Свойство уже было инициализировано
+  /**
+   * Записать свойство
+   *
+   * @param string $name Название
+   * @param mixed $value Значение
+   *
+   * @return void
+   */
+  public function __set(string $name, mixed $value = null): void
+  {
+    match ($name) {
+      'POSTFIX' => throw new exception('Запрещено реинициализировать постфикс ($this::POSTFIX)', 500),
+      'model' => (function () use ($value) {
+        if ($this->__isset('model')) throw new exception('Запрещено реинициализировать свойство с инстанцией модели ($this->model)', 500);
+        else {
+          // Свойство не инициализировано
 
-                    // Выброс исключения (неудача)
-                    throw new exception('Запрещено реинициализировать модель ($this->model)', 500);
-                } else {
-                    // Свойство ещё не было инициализировано
+          if (is_object($value)) $this->model = $value;
+          else throw new exception('Свойство $this->model должно хранить инстанцию модели (объект)', 500);
+        }
+      })(),
+      'view' => (function () use ($value) {
+        if ($this->__isset('view')) throw new exception('Запрещено реинициализировать свойство с инстанцией шаблонизатора представления ($this->view)', 500);
+        else {
+          // Свойство не инициализировано
 
-                    if ($value instanceof model) {
-                        // Передано подходящее значение
+          if (is_object($value)) $this->view = $value;
+          else throw new exception('Свойство $this->view должно хранить инстанцию шаблонизатора представления (объект)', 500);
+        }
+      })(),
+      default => throw new exception("Свойство \"\$$name\" не найдено", 404)
+    };
+  }
 
-                        // Запись свойства (успех)
-                        $this->model = $value;
-                    } else {
-                        // Передано неподходящее значение
+  /**
+   * Прочитать свойство
+   *
+   * @param string $name Название
+   *
+   * @return mixed Содержимое
+   */
+  public function __get(string $name): mixed
+  {
+    return match ($name) {
+      'POSTFIX' => $this::POSTFIX ?? throw new exception("Свойство \"POSTFIX\" не инициализировано", 500),
+      'model' => $this->model ?? throw new exception("Свойство \"\$model\" не инициализировано", 500),
+      'view' => $this->view ?? throw new exception("Свойство \"\$view\" не инициализировано", 500),
+      default => throw new exception("Свойство \"\$$name\" не обнаружено", 404)
+    };
+  }
 
-                        // Выброс исключения (неудача)
-                        throw new exception('Модель ($this->model) должна хранить инстанцию "mirzaev\minimal\model"', 500);
-                    }
-                }
-            })(),
-            'view' => (function () use ($value) {
-                if ($this->__isset('view')) {
-                    // Свойство уже было инициализировано
+  /**
+   * Проверить свойство на инициализированность
+   *
+   * @param string $name Название
+   * 
+   * @return bool Инициализировано свойство?
+   */
+  public function __isset(string $name): bool
+  {
+    return match ($name) {
+      default => isset($this->{$name})
+    };
+  }
 
-                    // Выброс исключения (неудача)
-                    throw new exception('Запрещено реинициализировать шаблонизатор представления ($this->view)', 500);
-                } else {
-                    // Свойство ещё не было инициализировано
-
-                    if (is_object($value)) {
-                        // Передано подходящее значение
-
-                        // Запись свойства (успех)
-                        $this->view = $value;
-                    } else {
-                        // Передано неподходящее значение
-
-                        // Выброс исключения (неудача)
-                        throw new exception('Шаблонизатор представлений ($this->view) должен хранить объект', 500);
-                    }
-                }
-            })(),
-            'postfix' => (function () use ($value) {
-                if ($this->__isset('postfix')) {
-                    // Свойство уже было инициализировано
-
-                    // Выброс исключения (неудача)
-                    throw new exception('Запрещено реинициализировать постфикс ($this->postfix)', 500);
-                } else {
-                    // Свойство ещё не было инициализировано
-
-                    if ($value = filter_var($value, FILTER_SANITIZE_STRING)) {
-                        // Передано подходящее значение
-
-                        // Запись свойства (успех)
-                        $this->postfix = $value;
-                    } else {
-                        // Передано неподходящее значение
-
-                        // Выброс исключения (неудача)
-                        throw new exception('Постфикс ($this->postfix) должен быть строкой', 500);
-                    }
-                }
-            })(),
-            default => throw new exception("Свойство \"\$$name\" не найдено", 404)
-        };
-    }
-
-    /**
-     * Прочитать свойство
-     *
-     * Записывает значение по умолчанию, если свойство не инициализировано
-     *
-     * @param string $name Название
-     *
-     * @return mixed Содержимое
-     */
-    public function __get(string $name): mixed
-    {
-        return match ($name) {
-            'postfix' => (function () {
-                if ($this->__isset('postfix')) {
-                    // Свойство уже было инициализировано
-                } else {
-                    // Свойство ещё не было инициализировано
-
-                    // Инициализация со значением по умолчанию
-                    $this->__set('postfix', '_controller');
-                }
-
-                // Возврат (успех)
-                return $this->postfix;
-            })(),
-            'view' => $this->view ?? throw new exception("Свойство \"\$$name\" не инициализировано", 500),
-            'model' => $this->model ?? throw new exception("Свойство \"\$$name\" не инициализировано", 500),
-            default => throw new exception("Свойство \"\$$name\" не обнаружено", 404)
-        };
-    }
-
-    /**
-     * Проверить свойство на инициализированность
-     *
-     * @param string $name Название
-     */
-    public function __isset(string $name): bool
-    {
-        return match ($name) {
-            default => isset($this->{$name})
-        };
-    }
-
-    /**
-     * Удалить свойство
-     *
-     * @param string $name Название
-     */
-    public function __unset(string $name): void
-    {
-        match ($name) {
-            default => (function () use ($name) {
-                // Удаление
-                unset($this->{$name});
-            })()
-        };
-    }
+  /**
+   * Удалить свойство
+   *
+   * @param string $name Название
+   *
+   * @return void
+   */
+  public function __unset(string $name): void
+  {
+    match ($name) {
+      default => (function () use ($name) {
+        // Удаление
+        unset($this->{$name});
+      })()
+    };
+  }
 }

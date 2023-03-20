@@ -7,202 +7,167 @@ namespace mirzaev\minimal;
 // Файлы проекта
 use mirzaev\minimal\core;
 
-// Встроенные библиотеки
-use ReflectionClass;
-
 /**
  * Маршрутизатор
  *
- * @package mirzaev\shop
+ * @package mirzaev\minimal
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>
- *
- * @todo
- * 1. Доработать обработку ошибок
- * 2. Добавить __set(), __get(), __isset() и __unset()
  */
 final class router
 {
-    /**
-     * @var array $router Маршруты
-     */
-    public array $routes = [];
+  /**
+   * @var array $router Реестр маршрутов
+   */
+  protected array $routes = [];
 
-    /**
-     * Записать маршрут
-     *
-     * @param string $route Маршрут
-     * @param string $target Обработчик (контроллер и модель, без постфиксов)
-     * @param string|null $method Метод
-     * @param string|null $type Тип
-     * @param string|null $model Модель
-     */
-    public function write(string $route, string $target, string $method = null, string $type = 'GET', string $model = null): void
-    {
-        // Запись в реестр
-        $this->routes[$route][$type] = [
-            'target' => $target,
-            'method' => $method ?? '__construct'
-        ];
-    }
+  /**
+   * Записать маршрут
+   *
+   * @param string $route Маршрут
+   * @param string $handler Обработчик - инстанции контроллера и модели (не обязательно), без постфиксов
+   * @param ?string $method Вызываемый метод в инстанции контроллера обработчика
+   * @param ?string $request HTTP-метод запроса (GET, POST, PUT...)
+   * @param ?string $model Инстанция модели (переопределение инстанции модели в $target)
+   *
+   * @return void
+   */
+  public function write(
+    string $route,
+    string $handler,
+    ?string $method = 'index',
+    ?string $request = 'GET',
+    ?string $model = null
+  ): void {
+    // Запись в реестр
+    $this->routes[$route][$request] = [
+      'controller' => $handler,
+      'model' => $model ?? $handler,
+      'method' => $method
+    ];
+  }
 
-    /**
-     * Обработать маршрут
-     *
-     * @param string $route Маршрут
-     */
-    public function handle(string $uri = null, core $core = null): ?string
-    {
-        // Запись полученного URI или из данных веб-сервера
-        $uri = $uri ?? $_SERVER['REQUEST_URI'] ?? '';
+  /**
+   * Обработать маршрут
+   *
+   * @param ?string $uri URI запроса (https://domain.com/foo/bar)
+   * @param ?string $method Метод запроса (GET, POST, PUT...)
+   * @param ?core $core Инстанция системного ядра
+   */
+  public function handle(?string $uri = null, ?string $method = null, ?core $core = new core): ?string
+  {
+    // Инициализация значений по умолчанию
+    $uri ??= $_SERVER['REQUEST_URI'] ?? '/';
+    $method ??= $_SERVER["REQUEST_METHOD"] ?? 'GET';
 
-        // Инициализация URL
-        $url = parse_url($uri, PHP_URL_PATH);
+    // Инициализация URL запроса (/foo/bar)
+    $url = parse_url($uri, PHP_URL_PATH);
 
-        // Универсализация
-        $url = self::universalization($url);
+    // Универсализация маршрута
+    $url = self::universalize($url);
 
-        // Сортировка массива маршрутов от большего ключа к меньшему (кешируется)
-        krsort($this->routes);
+    // Сортировка реестра маршрутов от большего ключа к меньшему (кешируется)
+    krsort($this->routes);
 
-        // Поиск директорий в ссылке
-        preg_match_all('/[^\/]+/', $url, $directories);
+    // Поиск директорий в ссылке
+    preg_match_all('/[^\/]+/', $url, $directories);
 
-        // Инициализация директорий
-        $directories = $directories[0];
+    // Инициализация директорий
+    $directories = $directories[0];
 
-        foreach ($this->routes as $route => $data) {
-            // Перебор маршрутов
+    foreach ($this->routes as $route => $data) {
+      // Перебор маршрутов
 
-            // Универсализация
-            $route = self::universalization($route);
+      // Универсализация маршрута
+      $route = self::universalize($route);
 
-            // Поиск директорий в маршруте
-            preg_match_all('/[^\/]+/', $route, $data['directories']);
+      // Поиск директорий
+      preg_match_all('/[^\/]+/', $route, $data['directories']);
 
-            // Инициализация директорий
-            $data['directories'] = $data['directories'][0];
+      // Инициализация директорий
+      $data['directories'] = $data['directories'][0];
 
-            if (count($directories) === count($data['directories'])) {
-                // Совпадает количество директорий у ссылки и маршрута (вероятно эта ссылка на этот маршрут)
+      if (count($directories) === count($data['directories'])) {
+        // Входит в диапазон маршрут (совпадает количество директорий у ссылки и маршрута)
 
-                // Инициализация массива переменных
-                $data['vars'] = [];
+        // Инициализация реестра переменных
+        $data['vars'] = [];
 
-                foreach ($data['directories'] as $index => &$directory) {
-                    // Перебор найденных переменных
+        foreach ($data['directories'] as $index => &$directory) {
+          // Перебор директорий
 
-                    if (preg_match('/\$([a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]+)/', $directory) === 1) {
-                        // Переменная
+          if (preg_match('/\$([a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]+)/', $directory) === 1) {
+            // Директория является переменной (.../$variable/...)
 
-                        // Запись в массив переменных и перезапись переменной значением из ссылки
-                        $directory = $data['vars'][trim($directory, '$')] = $directories[$index];
-                    }
-                }
+            // Запись в реестр переменных
+            $directory = $data['vars'][trim($directory, '$')] = $directories[$index];
+          }
+        }
 
-                // Реиницилазция маршрута
-                $route = self::universalization(implode('/', $data['directories']));
+        // Реиницилазция маршрута
+        $route = self::universalize(implode('/', $data['directories']));
 
-                // Маршрут оказался пустым
-                if (empty($route)) $route = '/';
+        // Проверка на пустой маршрут
+        if (empty($route)) $route = '/';
 
-                if (mb_stripos($route, $url, 0, "UTF-8") === 0 && mb_strlen($route, 'UTF-8') <=  mb_strlen($url, 'UTF-8')) {
-                    // Найден маршрут, а так же его длина не меньше длины запрошенного URL
+        if (mb_stripos($route, $url, 0, "UTF-8") === 0 && mb_strlen($route, 'UTF-8') <= mb_strlen($url, 'UTF-8')) {
+          // Идентифицирован маршрут (длина не меньше длины запрошенного URL)
 
-                    // Инициализация маршрута
-                    if (array_key_exists($_SERVER["REQUEST_METHOD"], $data)) {
-                        // Найдены настройки для полученного типа запроса
+          if (array_key_exists($method, $data)) {
+            // Идентифицирован метод маршрута (GET, POST, PUT...)
 
-                        // Запись маршрута
-                        $route = $data[$_SERVER["REQUEST_METHOD"]];
-                    } else {
-                        // Не найдены настройки для полученного типа запроса
+            $route = $data[$method];
 
-                        // Деинициализация
-                        unset($route);
-                    }
+            if (class_exists($controller = $core->namespace . '\\controllers\\' . $route['controller'] . $core->controller::POSTFIX)) {
+              // Найден контроллер
 
-                    // Выход из цикла
-                    break;
-                }
+              // Инициализация инстанции ядра контроллера
+              $controller = new $controller;
+
+              // Инициализация инстанции ядра модели
+              if (class_exists($model = $core->namespace . '\\models\\' . $route['model'] . $core->model::POSTFIX)) $controller->model = new $model;
+
+              // Вызов связанного с маршрутом методв и возврат (успех)
+              return $controller->{$route['method']}($data['vars'] + $_REQUEST, $_FILES);
             }
+          }
 
-            // Деинициализация
-            unset($route);
+          // Выход из цикла (провал)
+          break;
         }
-
-        if (!empty($route)) {
-            // Найден маршрут
-
-            if (class_exists($controller = ($core->namespace ?? (new core)->namespace) . '\\controllers\\' . $route['target'] . $core->controller->postfix ?? (new core())->controller->postfix)) {
-                // Найден контроллер
-
-                // Инициализация контроллера
-                $controller = new $controller;
-
-                if (class_exists($model = ($core->namespace ?? (new core)->namespace) . '\\models\\' . $route['target'] . $core->model->postfix ?? (new core())->model->postfix)) {
-                    // Найдена модель
-
-                    // Инициализация модели
-                    $controller->model = new $model;
-                }
-
-                if (empty($response = $controller->{$route['method']}($data['vars'] + $_REQUEST, $_FILES))) {
-                    // Не удалось получить ответ после обработки контроллера
-
-                    // Возврат (неудача)
-                    return $this->error($core);
-                }
-
-                // Возврат (успех)
-                return $response;
-            }
-        }
-
-        // Возврат (неудача)
-        return $this->error($core);
+      }
     }
 
-    /**
-     * Контроллер ошибок
-     *
-     * @param core $core Ядро фреймворка
-     *
-     * @return string|null HTML-документ с ошибкой
-     */
-    private function error(core $core = null): ?string
-    {
-        if (
-            class_exists($class = '\\' . ($core->namespace ?? (new ReflectionClass(core::class))->getNamespaceName()) . '\\controllers\\errors' . $core->controller->postfix ?? (new core())->controller->postfix) &&
-            method_exists($class, $method = 'error404')
-        ) {
-            // Существует контроллер ошибок и метод для обработки ошибки
+    // Возврат (провал)
+    return $this->error($core);
+  }
 
-            // Возврат (вызов метода для обработки ошибки)
-            return (new $class(basename($class)))->$method();
-        } else {
-            // Не существует контроллер ошибок или метод для обработки ошибки
+  /**
+   * Сгенерировать ответ с ошибкой
+   *
+   * Вызывает метод error404 в инстанции контроллера ошибок
+   *
+   * @param ?core $core Инстанция системного ядра
+   *
+   * @return ?string HTML-документ
+   */
+  private function error(core $core = new core): ?string
+  {
+    return class_exists($class = '\\' . $core->namespace . '\\controllers\\errors' . $core->controller::POSTFIX)
+      && method_exists($class, $method = 'error404')
+      ? (new $class)->$method()
+      : null;
+  }
 
-            // Никаких исключений не вызывать, отдать пустую страницу,
-            // либо вызвать, но отображать в зависимости от включенного дебаг режима !!!!!!!!!!!!!!!!!!!! см. @todo
-            return null;
-        }
-    }
-
-    /**
-     * Универсализация URL
-     *
-     * @param string $url Ссылка
-     *
-     * @return string Универсализированная ссылка
-     */
-    private function universalization(string $url): string
-    {
-        // Если не записан "/" в начале, то записать
-        $url = preg_replace('/^([^\/])/', '/$1', $url);
-
-        // Если записан "/" в конце, то удалить
-        $url = preg_replace('/(.+)\/$/', '$1', $url);
-
-        return $url;
-    }
+  /**
+   * Универсализировать маршрут 
+   *
+   * @param string $route Маршрут
+   *
+   * @return string Универсализированный маршрут
+   */
+  private function universalize(string $route): string
+  {
+    // Если не записан "/" в начале, то записать, затем, если записан "/" в конце, то удалить
+    return preg_replace('/(.+)\/$/', '$1', preg_replace('/^([^\/])/', '/$1', $route));
+  }
 }
