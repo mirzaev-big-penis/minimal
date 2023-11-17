@@ -21,7 +21,7 @@ class controller
   /**
    * Постфикс
    */
-  private const POSTFIX = '_controller';
+  public const POSTFIX = '_controller';
 
   /**
    * Инстанция модели
@@ -51,7 +51,6 @@ class controller
   public function __set(string $name, mixed $value = null): void
   {
     match ($name) {
-      'POSTFIX' => throw new exception('Запрещено реинициализировать постфикс ($this::POSTFIX)', 500),
       'model' => (function () use ($value) {
         if ($this->__isset('model')) throw new exception('Запрещено реинициализировать свойство с инстанцией модели ($this->model)', 500);
         else {
@@ -84,7 +83,6 @@ class controller
   public function __get(string $name): mixed
   {
     return match ($name) {
-      'POSTFIX' => $this::POSTFIX ?? throw new exception("Свойство \"POSTFIX\" не инициализировано", 500),
       'model' => $this->model ?? throw new exception("Свойство \"\$model\" не инициализировано", 500),
       'view' => $this->view ?? throw new exception("Свойство \"\$view\" не инициализировано", 500),
       default => throw new exception("Свойство \"\$$name\" не обнаружено", 404)
