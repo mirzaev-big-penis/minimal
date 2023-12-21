@@ -90,9 +90,9 @@ final class core
    *
    * @param ?string $uri Маршрут
    *
-   * @return ?string Сгенерированный ответ (HTML, JSON...)
+   * @return string|int|null Ответ
    */
-  public function start(string $uri = null): ?string
+  public function start(string $uri = null): string|int|null
   {
     // Обработка запроса
     return $this->__get('router')->handle($uri, core: $this);

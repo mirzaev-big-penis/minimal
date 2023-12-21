@@ -51,9 +51,11 @@ final class router
    *
    * @param ?string $uri URI запроса (https://domain.com/foo/bar)
    * @param ?string $method Метод запроса (GET, POST, PUT...)
-   * @param ?core $core Инстанция системного ядра
+	 * @param ?core $core Инстанция системного ядра
+	 *
+	 * @return string|int|null Ответ
    */
-  public function handle(?string $uri = null, ?string $method = null, ?core $core = new core): ?string
+  public function handle(?string $uri = null, ?string $method = null, ?core $core = new core): string|int|null
   {
     // Инициализация значений по умолчанию
     $uri ??= $_SERVER['REQUEST_URI'] ?? '/';
@@ -115,16 +117,16 @@ final class router
           if (array_key_exists($method, $data)) {
             // Идентифицирован метод маршрута (GET, POST, PUT...)
 
-            $route = $data[$method];
+						$route = $data[$method];
 
             if (class_exists($controller = $core->namespace . '\\controllers\\' . $route['controller'] . $core->controller::POSTFIX)) {
               // Найден контроллер
 
               // Инициализация инстанции ядра контроллера
-              $controller = new $controller;
+							$controller = new $controller;
 
               // Инициализация инстанции ядра модели
-              if (class_exists($model = $core->namespace . '\\models\\' . $route['model'] . $core->model::POSTFIX)) $controller->model = new $model;
+              if (class_exists($model = $core->namespace . '\\models\\' . $route['model'] . $core->model::POSTFIX));
 
               // Вызов связанного с маршрутом методв и возврат (успех)
               return $controller->{$route['method']}($data['vars'] + $_REQUEST, $_FILES);
