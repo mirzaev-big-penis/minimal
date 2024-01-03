@@ -18,7 +18,7 @@ class model
   /**
    * Постфикс
    */
-  private const POSTFIX = '_model';
+  public const POSTFIX = '_model';
 
   /**
    * Конструктор
@@ -38,7 +38,6 @@ class model
   public function __set(string $name, mixed $value = null): void
   {
     match ($name) {
-      'POSTFIX' => throw new exception('Запрещено реинициализировать постфикс ($this::POSTFIX)', 500),
       default => throw new exception("Свойство \"\$$name\" не найдено", 404)
     };
   }
@@ -53,7 +52,6 @@ class model
   public function __get(string $name): mixed
   {
     return match ($name) {
-      'POSTFIX' => $this::POSTFIX ?? throw new exception("Свойство \"POSTFIX\" не инициализировано", 500),
       default => throw new exception("Свойство \"\$$name\" не обнаружено", 404)
     };
   }
