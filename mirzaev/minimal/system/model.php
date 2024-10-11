@@ -4,86 +4,31 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal;
 
-// Встроенные библиотеки
+// Files of the project
+use	mirzaev\minimal\traits\magic;
+
+// Built-in libraries
 use exception;
 
 /**
- * Модель
+ * Model (base)
  *
  * @package mirzaev\minimal
+ *
+ * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>
  */
 class model
 {
-  /**
-   * Постфикс
-   */
-  public const POSTFIX = '_model';
+	use magic;
 
-  /**
-   * Конструктор
-   */
-  public function __construct()
-  {
-  }
+	/**
+	 * Postfix of file names
+	 */
+	public const string POSTFIX = '_model';
 
-  /**
-   * Записать свойство
-   *
-   * @param string $name Название
-   * @param mixed $value Содержимое
-   *
-   * @return void
-   */
-  public function __set(string $name, mixed $value = null): void
-  {
-    match ($name) {
-      default => throw new exception("Свойство \"\$$name\" не найдено", 404)
-    };
-  }
-
-  /**
-   * Прочитать свойство
-   *
-   * @param string $name Название
-   *
-   * @return mixed Содержимое
-   */
-  public function __get(string $name): mixed
-  {
-    return match ($name) {
-      default => throw new exception("Свойство \"\$$name\" не обнаружено", 404)
-    };
-  }
-
-  /**
-   * Проверить свойство на инициализированность
-   *
-   * @param string $name Название
-   *
-   * @return bool Инициализировано свойство?
-   */
-  public function __isset(string $name): bool
-  {
-    return match ($name) {
-      default => isset($this->{$name})
-    };
-  }
-
-  /**
-   * Удалить свойство
-   *
-   * @param string $name Название
-   *
-   * @return void
-   */
-  public function __unset(string $name): void
-  {
-    match ($name) {
-      default => (function () use ($name) {
-        // Удаление
-        unset($this->{$name});
-      })()
-    };
-  }
+	/**
+	 * Constructor
+	 */
+	public function __construct() {}
 }

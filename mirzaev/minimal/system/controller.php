@@ -4,119 +4,91 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal;
 
-// Файлы проекта
-use mirzaev\minimal\model;
+// Files of the project
+use mirzaev\minimal\model,
+	mirzaev\minimal\traits\magic;
 
 // Встроенные библиотеки
 use exception;
 
 /**
- * Контроллер
+ * Controller (base)
  *
  * @package mirzaev\minimal
+ *
+ * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>
  */
 class controller
 {
-  /**
-   * Постфикс
-   */
-  public const POSTFIX = '_controller';
+	use magic;
 
-  /**
-   * Инстанция модели
-   */
-  protected model $model;
+	/**
+	 * Postfix of file names
+	 */
+	public const string POSTFIX = '_controller';
 
-  /**
-   * Инстанция шаблонизатора представления
-   */
-  protected object $view;
+	/**
+	 * Instance of the model connected in the router
+	 */
+	protected model $model;
 
-  /**
-   * Конструктор
-   */
-  public function __construct()
-  {
-  }
+	/**
+	 * View template engine instance (twig)
+	 */
+	protected object $view;
 
-  /**
-   * Записать свойство
-   *
-   * @param string $name Название
-   * @param mixed $value Значение
-   *
-   * @return void
-   */
-  public function __set(string $name, mixed $value = null): void
-  {
-    match ($name) {
-      'model' => (function () use ($value) {
-        if ($this->__isset('model')) throw new exception('Запрещено реинициализировать свойство с инстанцией модели ($this->model)', 500);
-        else {
-          // Свойство не инициализировано
+	/**
+	 * Constructor
+	 */
+	public function __construct() {}
 
-          if (is_object($value)) $this->model = $value;
-          else throw new exception('Свойство $this->model должно хранить инстанцию модели (объект)', 500);
-        }
-      })(),
-      'view' => (function () use ($value) {
-        if ($this->__isset('view')) throw new exception('Запрещено реинициализировать свойство с инстанцией шаблонизатора представления ($this->view)', 500);
-        else {
-          // Свойство не инициализировано
+	/**
+	 * Write property
+	 *
+	 * @param string $name Name of the property
+	 * @param mixed $value Value of the property
+	 *
+	 * @return void
+	 */
+	public function __set(string $name, mixed $value = null): void
+	{
+		match ($name) {
+			'model' => (function () use ($value) {
+				if ($this->__isset('model')) throw new exception('Can not reinitialize property: ' . static::class . '::$model', 500);
+				else {
+					// Property not initialized 
 
-          if (is_object($value)) $this->view = $value;
-          else throw new exception('Свойство $this->view должно хранить инстанцию шаблонизатора представления (объект)', 500);
-        }
-      })(),
-      default => throw new exception("Свойство \"\$$name\" не найдено", 404)
-    };
-  }
+					if (is_object($value)) $this->model = $value;
+					else throw new exception('Property "' . static::class . '::view" should store an instance of a model', 500);
+				}
+			})(),
+			'view' => (function () use ($value) {
+				if ($this->__isset('view')) throw new exception('Can not reinitialize property: ' . static::class . '::$view', 500);
+				else {
+					// Property not initialized 
 
-  /**
-   * Прочитать свойство
-   *
-   * @param string $name Название
-   *
-   * @return mixed Содержимое
-   */
-  public function __get(string $name): mixed
-  {
-    return match ($name) {
-      'model' => $this->model ?? throw new exception("Свойство \"\$model\" не инициализировано", 500),
-      'view' => $this->view ?? throw new exception("Свойство \"\$view\" не инициализировано", 500),
-      default => throw new exception("Свойство \"\$$name\" не обнаружено", 404)
-    };
-  }
+					if (is_object($value)) $this->view = $value;
+					else throw new exception('Property "' . static::class . '::view" should store an instance of a view template engine', 500);
+				}
+			})(),
+			default => throw new exception('Property "' . static::class . "::\$$name\" not found", 404)
+		};
+	}
 
-  /**
-   * Проверить свойство на инициализированность
-   *
-   * @param string $name Название
-   * 
-   * @return bool Инициализировано свойство?
-   */
-  public function __isset(string $name): bool
-  {
-    return match ($name) {
-      default => isset($this->{$name})
-    };
-  }
-
-  /**
-   * Удалить свойство
-   *
-   * @param string $name Название
-   *
-   * @return void
-   */
-  public function __unset(string $name): void
-  {
-    match ($name) {
-      default => (function () use ($name) {
-        // Удаление
-        unset($this->{$name});
-      })()
-    };
-  }
+	/**
+	 * Read property
+	 *
+	 * @param string $name Name of the property
+	 *
+	 * @return mixed Value of the property
+	 */
+	public function __get(string $name): mixed
+	{
+		return match ($name) {
+			'model' => $this->model ?? throw new exception('Property "' . static::class . '::$model" is not initialized', 500),
+			'view' => $this->view ?? throw new exception('Property "' . static::class . '::$view" is not initialized', 500),
+			default => throw new exception('Property "' . static::class . "::\$$name\" not found", 404)
+		};
+	}
 }
