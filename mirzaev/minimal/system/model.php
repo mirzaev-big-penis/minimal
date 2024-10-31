@@ -7,11 +7,10 @@ namespace mirzaev\minimal;
 // Files of the project
 use	mirzaev\minimal\traits\magic;
 
-// Built-in libraries
-use exception;
-
 /**
- * Model (base)
+ * Model
+ *
+ * @method self __construct() Constructor
  *
  * @package mirzaev\minimal
  *
@@ -23,12 +22,9 @@ class model
 	use magic;
 
 	/**
-	 * Postfix of file names
-	 */
-	public const string POSTFIX = '_model';
-
-	/**
 	 * Constructor
+	 *
+	 * @return self
 	 */
 	public function __construct() {}
 }

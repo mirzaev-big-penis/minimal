@@ -1,7 +1,7 @@
 {
     "name": "mirzaev/minimal",
     "type": "framework",
-    "description": "Lightweight MVC framework that manages only the basic mechanisms, leaving the development of the programmer and not overloading the project",
+    "description": "My vision of a good framework",
     "keywords": [
         "mvc",
         "framework",
@@ -14,7 +14,7 @@
             "name": "Arsen Mirzaev Tatyano-Muradovich",
             "email": "arsen@mirzaev.sexy",
             "homepage": "https://mirzaev.sexy",
-            "role": "Developer"
+            "role": "Programmer"
         }
     ],
     "support": {
@@ -22,16 +22,11 @@
         "issues": "https://git.mirzaev.sexy/mirzaev/minimal/issues"
     },
     "require": {
-        "php": "~8.2"
+        "php": "~8.4"
     },
     "autoload": {
         "psr-4": {
             "mirzaev\\minimal\\": "mirzaev/minimal/system"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "mirzaev\\minimal\\tests\\": "mirzaev/minimal/tests"
         }
     }
 }

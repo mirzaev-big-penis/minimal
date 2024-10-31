@@ -4,17 +4,32 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal;
 
-// Файлы проекта
+// Files of the project
 use mirzaev\minimal\router,
+	mirzaev\minimal\route,
 	mirzaev\minimal\controller,
 	mirzaev\minimal\model;
 
-// Встроенные библиотеки
+// Built-in libraries
 use exception,
+	BadMethodCallException  as exception_method,
+	DomainException as exception_domain,
+	InvalidArgumentException as exception_argument,
+	UnexpectedValueException as exception_value,
 	ReflectionClass as reflection;
 
 /**
  * Core
+ *
+ * @param string $namespace Namespace where the core was initialized from
+ * @param controller $controller An instance of the controller
+ * @param model $model An instance of the model
+ * @param router $router An instance of the router
+ *
+ * @mathod self __construct(?string $namespace) Constructor
+ * @method void __destruct() Destructor
+ * @method string|null request(?string $uri, ?string $method, array $variabls) Handle the request
+ * @method string|null route(route $route, string $method) Handle the route
  *
  * @package mirzaev\minimal
  *
@@ -24,204 +39,326 @@ use exception,
 final class core
 {
 	/**
-	 * Инстанция соединения с базой данных
-	 */
-	private object $db;
-
-	/**
-	 * Инстанция маршрутизатора
-	 */
-	private readonly router $router;
-
-	/**
-	 * Инстанция ядра контроллера
-	 */
-	private readonly controller $controller;
-
-	/**
-	 * Инстанция ядра модели
-	 */
-	private readonly model $model;
-
-	/**
-	 * Путь пространства имён (системное)
+	 * Namespace
 	 *
-	 * Используется для поиска файлов по спецификации PSR-4
-	 */
-	private readonly string $namespace;
-
-	/**
-	 * Конструктор
+	 * @var string $namespace Namespace where the core was initialized from
 	 *
-	 * @param ?object $db Инстанция соединения с базой данных
-	 * @param ?router $router Маршрутизатор
-	 * @param ?controller $controller Инстанция ядра контроллера
-	 * @param ?model $model Инстанция ядра модели
-	 * @param ?string $namespace Пространство имён системного ядра
-	 * 
-	 * @return self Инстанция ядра
+	 * @see https://www.php-fig.org/psr/psr-4/
 	 */
-	public function __construct(
-		?object $db = null,
-		?router $router = null,
-		?controller $controller = null,
-		?model $model = null,
-		?string $namespace = null
-	) {
-		// Инициализация свойств
-		if (isset($db)) $this->__set('db', $db);
-		if (isset($router)) $this->__set('router', $router);
-		if (isset($controller)) $this->__set('controller', $controller);
-		if (isset($model)) $this->__set('model', $model);
-		$this->__set('namespace', $namespace ?? (new reflection(self::class))->getNamespaceName());
+	public string $namespace {
+		// Read
+		get => $this->namespace;
 	}
 
 	/**
-	 * Деструктор
+	 * Controller
 	 *
+	 * @var controller $controller An instance of the controller
+	 */
+	private controller $controller {
+		// Read
+		get => $this->controller ??= new controller;
+	}
+
+	/**
+	 * Model
+	 *
+	 * @var model $model An instance of the model
+	 */
+	private model $model {
+		// Read
+		get => $this->model ??= new model;
+	}
+
+	/**
+	 * Router
+	 *
+	 * @var router $router An instance of the router
+	 */
+	public router $router {
+		get => $this->router ??= router::initialize();
+	}
+
+	/**
+	 * Constrictor
+	 *
+	 * @param ?string $namespace Пространство имён системного ядра
+	 * 
+	 * @return self The instance of the core
+	 */
+	public function __construct(
+		?string $namespace = null
+	) {
+		// Writing a namespace to the property
+		$this->namespace = $namespace ?? (new reflection(self::class))->getNamespaceName();
+	}
+
+
+	/**
+	 * Destructor
 	 */
 	public function __destruct() {}
 
 	/**
-	 * Запуск
+	 * Request
 	 *
-	 * @param ?string $uri Маршрут
+	 * Handle the request
 	 *
-	 * @return string|int|null Ответ
+	 * @param string|null $uri URI of the request (value by default: $_SERVER['REQUEST_URI'])
+	 * @param string|null $method Method of the request (GET, POST, PUT...) (value by default: $_SERVER["REQUEST_METHOD"])
+	 * @paam array $parameters parameters for merging with route parameters 
+	 *
+	 * @return string|null Response 
 	 */
-	public function start(string $uri = null): string|int|null
+	public function request(?string $uri = null, ?string $method = null, array $parameters = []): ?string
 	{
-		// Обработка запроса
-		return $this->__get('router')->handle($uri, core: $this);
+		// Matching a route 
+		$route = $this->router->match($uri ??= $_SERVER['REQUEST_URI'] ?? '/', $method ??= $_SERVER["REQUEST_METHOD"]);
+
+		if ($route) {
+			// Initialized the route
+
+			if (!empty($parameters)) {
+				// Recaived parameters
+
+				// Merging parameters with route parameters
+				$route->parameters = $parameters + $route->parameters;
+			}
+
+			// Handling the route and exit (success)
+			return $this->route($route, $method);
+		}
+
+		// Exit (fail)
+		return null;
 	}
 
 	/**
-	 * Записать свойство
+	 * Route
 	 *
-	 * @param string $name Название
-	 * @param mixed $value Содержимое
+	 * Handle the route
 	 *
-	 * @return void
+	 * @param route $route The route
+	 * @param string $method Method of requests (GET, POST, PUT, DELETE, COOKIE...)
+	 *
+	 * @return string|null Response, if generated
 	 */
-	public function __set(string $name, mixed $value = null): void
+	public function route(route $route, string $method = 'GET'): ?string
 	{
-		match ($name) {
-			'db', 'database' => (function () use ($value) {
-				if ($this->__isset('db')) throw new exception('Запрещено реинициализировать инстанцию соединения с базой данных ($this->db)', 500);
-				else {
-					// Свойство ещё не было инициализировано
+		// Initializing name of the controller class
+		$controller = $route->controller;
+	
+		if ($route->controller instanceof controller) {
+			// Initialized the controller
+		} else if (class_exists($controller = "$this->namespace\\controllers\\$controller")) {
+			// Found the controller by its name
 
-					if (is_object($value)) $this->db = $value;
-					else throw new exception('Свойство $this->db должно хранить инстанцию соединения с базой данных', 500);
+			// Initializing the controller
+			$route->controller = new $controller(core: $this);
+		} else if (!empty($route->controller)) {
+			// Not found the controller and $route->controller has a value
+
+			// Exit (fail)
+			throw new exception_domain('Failed to found the controller: ' . $route->controller);
+		} else {
+			// Not found the controller and $route->controller is empty
+
+			// Exit (fail)
+			throw new exception_argument('Failed to initialize the controller: ' . $route->controller);
+		}
+
+		// Deinitializing name of the controller class
+		unset($controller);
+
+		// Initializing name if the model class
+		$model = $route->model;
+
+		if ($route->model instanceof model) {
+			// Initialized the model
+		} else if (class_exists($model = "$this->namespace\\models\\$model")) {
+			// Found the model by its name
+
+			// Initializing the model
+			$route->model = new $model;
+		} else if (!empty($route->model)) {
+			// Not found the model and $route->model has a value
+
+			// Exit (fail)
+			throw new exception_domain('Failed to initialize the model: ' . ($route->model ?? $route->controller));
+		}
+
+		// Deinitializing name of the model class
+		unset($model);
+
+		if ($route->model instanceof model) {
+			// Initialized the model
+
+			// Writing the model to the controller
+			$route->controller->model = $route->model;
+		}
+
+		if ($method === 'POST') {
+			// POST
+
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
+
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters + $_POST, $_FILES);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else if ($method === 'GET') {
+			// GET
+
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
+
+				if ($_SERVER["CONTENT_TYPE"] === 'multipart/form-data' || $_SERVER["CONTENT_TYPE"] === 'application/x-www-form-urlencoded') {
+					// The requeset content type is the "multipart/form-data" or "application/x-www-form-urlencoded"
+
+					// Analysis of the request
+					[$_GET, $_FILES] = request_parse_body($route->options);
 				}
-			})(),
-			'router' => (function () use ($value) {
-				if ($this->__isset('router')) throw new exception('Запрещено реинициализировать инстанцию маршрутизатора ($this->router)', 500);
-				else {
-					// Свойство ещё не было инициализировано
 
-					if ($value instanceof router) $this->router = $value;
-					else throw new exception('Свойство $this->router должно хранить инстанцию маршрутизатора (mirzaev\minimal\router)"', 500);
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters + $_GET, $_FILES);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else if ($method === 'PUT') {
+			// PUT
+
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
+
+				if ($_SERVER["CONTENT_TYPE"] === 'multipart/form-data' || $_SERVER["CONTENT_TYPE"] === 'application/x-www-form-urlencoded') {
+					// The requeset content type is the "multipart/form-data" or "application/x-www-form-urlencoded"
+
+					// Analysis of the request
+					[$_PUT, $_FILES] = request_parse_body($route->options);
 				}
-			})(),
-			'controller' => (function () use ($value) {
-				if ($this->__isset('controller')) throw new exception('Запрещено реинициализировать инстанцию ядра контроллеров ($this->controller)', 500);
-				else {
-					// Свойство не инициализировано
 
-					if ($value instanceof controller) $this->controller = $value;
-					else throw new exception('Свойство $this->controller должно хранить инстанцию ядра контроллеров (mirzaev\minimal\controller)', 500);
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters + $_PUT, $_FILES);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else if ($method === 'DELETE') {
+			// DELETE
+
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
+
+				if ($_SERVER["CONTENT_TYPE"] === 'multipart/form-data' || $_SERVER["CONTENT_TYPE"] === 'application/x-www-form-urlencoded') {
+					// The requeset content type is the "multipart/form-data" or "application/x-www-form-urlencoded"
+
+					// Analysis of the request
+					[$_DELETE, $_FILES] = request_parse_body($route->options);
 				}
-			})(),
-			'model' => (function () use ($value) {
-				if ($this->__isset('model')) throw new exception('Запрещено реинициализировать инстанцию ядра моделей ($this->model)', 500);
-				else {
-					// Свойство не инициализировано
 
-					if ($value instanceof model) $this->model = $value;
-					else throw new exception('Свойство $this->model должно хранить инстанцию ядра моделей (mirzaev\minimal\model)', 500);
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters + $_DELETE, $_FILES);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else if ($method === 'PATCH') {
+			// PATCH
+
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
+
+				if ($_SERVER["CONTENT_TYPE"] === 'multipart/form-data' || $_SERVER["CONTENT_TYPE"] === 'application/x-www-form-urlencoded') {
+					// The requeset content type is the "multipart/form-data" or "application/x-www-form-urlencoded"
+
+					// Analysis of the request
+					[$_PATCH, $_FILES] = request_parse_body($route->options);
 				}
-			})(),
-			'namespace' => (function () use ($value) {
-				if ($this->__isset('namespace')) throw new exception('Запрещено реинициализировать путь пространства имён ($this->namespace)', 500);
-				else {
-					// Свойство не инициализировано
 
-					if (is_string($value)) $this->namespace = $value;
-					else throw new exception('Свойство $this->namespace должно хранить строку с путём пространства имён', 500);
-				}
-			})(),
-			default => throw new exception("Свойство \"\$$name\" не найдено", 404)
-		};
-	}
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters + $_PATCH, $_FILES);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else if ($method === 'HEAD') {
+			// HEAD
 
-	/**
-	 * Прочитать свойство
-	 *
-	 * Записывает значение по умолчанию, если свойство не инициализировано
-	 *
-	 * @param string $name Название
-	 *
-	 * @return mixed Содержимое
-	 */
-	public function __get(string $name): mixed
-	{
-		return match ($name) {
-			'db', 'database' => $this->db ?? throw new exception("Свойство \"\$$name\" не инициализировано", 500),
-			'router' => (function () {
-				// Инициализация со значением по умолчанию
-				if (!$this->__isset('router')) $this->__set('router', new router);
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
 
-				// Возврат (успех)
-				return $this->router;
-			})(),
-			'controller' => (function () {
-				// Инициализация со значением по умолчанию
-				if (!$this->__isset('controller')) $this->__set('controller', new controller);
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else if ($method === 'OPTIONS') {
+			// OPTIONS
 
-				// Возврат (успех)
-				return $this->controller;
-			})(),
-			'model' => (function () {
-				// Инициализация со значением по умолчанию
-				if (!$this->__isset('model')) $this->__set('model', new model);
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
 
-				// Возврат (успех)
-				return $this->model;
-			})(),
-			'namespace' => $this->namespace ?? throw new exception("Свойство \"\$$name\" не инициализировано", 500),
-			default => throw new exception("Свойство \"\$$name\" не найдено", 404)
-		};
-	}
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else if ($method === 'CONNECT') {
+			// CONNECT
 
-	/**
-	 * Проверить свойство на инициализированность
-	 *
-	 * @param string $name Название
-	 *
-	 * @return bool Инициализировано свойство?
-	 */
-	public function __isset(string $name): bool
-	{
-		return match ($name) {
-			default => isset($this->{$name})
-		};
-	}
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
 
-	/**
-	 * Удалить свойство
-	 *
-	 * @param string $name Название
-	 *
-	 * @return void
-	 */
-	public function __unset(string $name): void
-	{
-		match ($name) {
-			default => (function () use ($name) {
-				// Удаление
-				unset($this->{$name});
-			})()
-		};
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else if ($method === 'TRACE') {
+			// TRACE
+
+			if (method_exists($route->controller, $route->method)) {
+				// Found the method of the controller
+
+				// Executing method of the controller that handles the route and exit (success)
+				return $route->controller->{$route->method}($route->parameters);
+			} else {
+				// Not found the method of the controller
+		
+				// Exit (fail)
+				throw new exception('Failed to find the method of the controller: ' . $route->method);
+			}
+		} else {
+			// Not recognized method of the request
+
+			// Exit (fail)
+			throw new exception_value('Failed to recognize the method: ' . $method);
+		}
+
+		// Exit (fail)
+		return null;
 	}
 }

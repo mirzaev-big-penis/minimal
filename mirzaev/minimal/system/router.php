@@ -4,11 +4,21 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal;
 
-// Файлы проекта
-use mirzaev\minimal\core;
+// Files of the project
+use mirzaev\minimal\route,
+	mirzaev\minimal\traits\singleton;
+
+// Build-ing libraries
+use InvalidArgumentException as exception_argument;
 
 /**
- * Маршрутизатор
+ * Router
+ *
+ * @param array $routes The registry of routes
+ *
+ * @method self write(string $uri, string $method)
+ * @method self sort() Sort routes (DEV)
+ * @method string universalize(string $urn) Universalize URN
  *
  * @package mirzaev\minimal
  *
@@ -17,58 +27,57 @@ use mirzaev\minimal\core;
  */
 final class router
 {
-	/**
-	 * @var array $router Реестр маршрутов
-	 */
-	/* protected array $routes = []; */
-	public array $routes = [];
+	use singleton;
 
 	/**
-	 * Записать маршрут
+	 * Routes
 	 *
-	 * @param string $route Маршрут
-	 * @param string $handler Обработчик - инстанции контроллера и модели (не обязательно), без постфиксов
-	 * @param ?string $method Вызываемый метод в инстанции контроллера обработчика
-	 * @param ?string $request HTTP-метод запроса (GET, POST, PUT...)
-	 * @param ?string $model Инстанция модели (переопределение инстанции модели в $target)
-	 * @param array $variables 
+	 * @var array $routes The registry of routes
+	 */
+	protected array $routes = [];
+
+	/**
+	 * Write a route
 	 *
-	 * @return static The instance from which the method was called (fluent interface)
+	 * @param string $urn URN of the route ('/', '/page', '/page/$variable', '/page/$collector...'...)
+	 * @param route $route The route
+	 * @param string|array $method Method of requests (GET, POST, PUT, DELETE, COOKIE...)
+	 *
+	 * @return self The instance from which the method was called (fluent interface)
 	 */
 	public function write(
-		string $route,
-		string $handler,
-		?string $method = 'index',
-		?string $request = 'GET',
-		?string $model = null,
-		array $variables = []
-	): static {
-		// Запись в реестр
-		$this->routes[$route][$request] = [
-			'controller' => $handler,
-			'model' => $model ?? $handler,
-			'method' => $method,
-			'variables' => $variables
-		];
+		string $urn,
+		route $route,
+		null|string|array $method = 'GET'
+	): self {
+		foreach (is_array($method) ? $method : [$method] as $method) {
+			// Iterate over methods of requests
+
+			// Validating method
+			$method = match ($method) {
+				'POST', 'GET', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'CONNECT', 'TRACE' => $method,
+				default => throw new exception_argument("Failed to initialize method: \"$method\"")
+			};
+
+			// Writing to the registry of routes
+			$this->routes[$urn][$method] = $route;
+		}
 
 		// Exit (success) (fluent interface)
 		return $this;
 	}
 
 	/**
-	 * Handle a request
+	 * Match
 	 *
-	 * @param string|null $uri URI (protocol://domain/foo/bar)
-	 * @param string|null $method Method (GET, POST, PUT...)
-	 * @param core|null $core Instence of the system core
+	 * Match request URI with registry of routes
 	 *
-	 * @return string|int|null Response
+	 * @param string $uri URI (protocol://domain/foo/bar)
+	 * @param string $method Method of the request (GET, POST, PUT...)
+	 *
+	 * @return route|null Route, if found
 	 */
-	public function handle(
-		?string $uri = null,
-		?string $method = null,
-		?core $core = new core
-	): string|int|null {
+	public function match(string $uri, string $method): ?route {
 		// Declaration of the registry of routes directoies 
 		$routes = [];
 
@@ -81,17 +90,10 @@ final class router
 		}
 
 		if (count($routes) === count($this->routes)) {
-			// Initialized the registry of routes directoies 
+			// Initialized the registry of routes directoies
 
-			// Initializing default values		
-			$uri ??= $_SERVER['REQUEST_URI'] ?? '/';
-			$method ??= $_SERVER["REQUEST_METHOD"];
-
-			// Initializing of URN (/foo/bar)
-			$urn = parse_url(urldecode($uri), PHP_URL_PATH);
-
-			// Universalization of URN
-			$urn = self::universalize($urn);
+			// Universalization of URN (/foo/bar)
+			$urn = self::universalize(parse_url(urldecode($uri), PHP_URL_PATH));
 
 			// Search directories of URN (explode() creates empty value in array)
 			preg_match_all('/(^\/$|[^\/]+)/', $urn, $directories);
@@ -171,12 +173,12 @@ final class router
 						// The directory is a variable ($variable)
 
 						// Запись в реестр переменных и перещапись директории в маршруте
-						$data[$method]['variables'][trim($route_directory, '$')] = $directories[$i];
+						$data[$method]->variables[trim($route_directory, '$')] = $directories[$i];
 					} else if (preg_match('/^\$([a-zA-Z_\x80-\xff]+\.\.\.)$/', $route_directory) === 1) {
 						// The directory of route is a collector ($variable...)
 
 						// Инициализаия ссылки на массив сборщика
-						$collector = &$data[$method]['variables'][trim($route_directory, '$.')];
+						$collector = &$data[$method]->variables[trim($route_directory, '$.')];
 
 						// Инициализаия массива сборщика
 						$collector ??= [];
@@ -195,31 +197,13 @@ final class router
 					}
 				}
 
-				/**
-				 * Initialization of route handlers
-				 */
-
-				if (array_key_exists($method, $data)) {
-					// Идентифицирован метод маршрута (GET, POST, PUT...)
-
-					// Инициализация обработчиков (controller, model, method)
-					$handlers = $data[$method];
-
-					if (class_exists($controller = $core->namespace . '\\controllers\\' . $handlers['controller'] . $core->controller::POSTFIX)) {
-						// Найден контроллер
-
-						// Инициализация инстанции ядра контроллера
-						$controller = new $controller;
-
-						// Вызов связанного с маршрутом метода и возврат (успех)
-						return $controller->{$handlers['method']}($handlers['variables'] + $_REQUEST, $_FILES, file_get_contents('php://input'));
-					}
-				}
+				// Exit (success or fail)
+				return $data[$method] ?? null;
 			}
 		}
 
-		// Возврат (провал)
-		return $this->error($core);
+		// Exit (fail)
+		return null;
 	}
 
 	/**
@@ -236,11 +220,11 @@ final class router
 	 *
 	 * Добавить чтобы сначала текст потом переменная затем после переменной первыми тексты и в конце перменные опять и так рекурсивно
 	 *
-	 * @return static The instance from which the method was called (fluent interface)
-   *
+	 * @return self The instance from which the method was called (fluent interface)
+	 *
 	 * @todo ПЕРЕДЕЛАТЬ ПОЛНОСТЬЮ
 	 */
-	public function sort(): static
+	public function sort(): self
 	{
 		uksort($this->routes, function (string $a, string $b) {
 			// Sorting routes
@@ -285,34 +269,17 @@ final class router
 	}
 
 	/**
-	 * Сгенерировать ответ с ошибкой
-	 *
-	 * Вызывает метод error404 в инстанции контроллера ошибок
-	 *
-	 * @param ?core $core Инстанция системного ядра
-	 *
-	 * @return ?string HTML-документ
-	 */
-	private function error(core $core = new core): ?string
-	{
-		return class_exists($class = '\\' . $core->namespace . '\\controllers\\errors' . $core->controller::POSTFIX)
-			&& method_exists($class, $method = 'error404')
-			? (new $class)->$method()
-			: null;
-	}
-
-	/**
 	 * Universalize URN 
 	 *
 	 * Always "/" at the beginning and never "/" at the end
 	 *
-	 * @param string &$urn URN (/foo/bar)
+	 * @param string $urn URN (/foo/bar)
 	 *
 	 * @return string Universalized URN 
 	 */
 	private function universalize(string $urn): string
 	{
 		// Universalization of URN and exit (success)
-		return (string) preg_replace('/(.+)\/$/', '$1', preg_replace('/^([^\/])/', '/$1', $urn));
+		return (string) '/' . mb_trim($urn, '/');
 	}
 }

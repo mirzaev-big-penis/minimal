@@ -10,12 +10,14 @@ use exception;
 /**
  * Trait of magical methods
  *
- * @method void __set(string $name, mixed $value = null) Write property
+ * @method void __set(string $name, mixed $value) Write property
  * @method mixed __get(string $name) Read property
  * @method void __unset(string $name) Delete property
  * @method bool __isset(string $name) Check property for initialization
  *
  * @package mirzaev\minimal\traits
+ *
+ * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>
  */
 trait magic

@@ -6,13 +6,22 @@ namespace mirzaev\minimal;
 
 // Files of the project
 use mirzaev\minimal\model,
+	mirzaev\minimal\core,
 	mirzaev\minimal\traits\magic;
 
-// Встроенные библиотеки
+// Build-in libraries
 use exception;
 
 /**
- * Controller (base)
+ * Controller
+ *
+ * @var core $core An instance of the core
+ * @var model $model An instance of the model connected in the core
+ * @var view $view View template engine instance (twig)
+ * @var core $core An instance of the core
+ * @var core $core An instance of the core
+ *
+ * @method self __construct(core $core) Constructor
  *
  * @package mirzaev\minimal
  *
@@ -24,71 +33,54 @@ class controller
 	use magic;
 
 	/**
-	 * Postfix of file names
-	 */
-	public const string POSTFIX = '_controller';
-
-	/**
-	 * Instance of the model connected in the router
-	 */
-	protected model $model;
-
-	/**
-	 * View template engine instance (twig)
-	 */
-	protected object $view;
-
-	/**
-	 * Constructor
-	 */
-	public function __construct() {}
-
-	/**
-	 * Write property
+	 * Core
 	 *
-	 * @param string $name Name of the property
-	 * @param mixed $value Value of the property
-	 *
-	 * @return void
+	 * @var core $core An instance of the core
 	 */
-	public function __set(string $name, mixed $value = null): void
-	{
-		match ($name) {
-			'model' => (function () use ($value) {
-				if ($this->__isset('model')) throw new exception('Can not reinitialize property: ' . static::class . '::$model', 500);
-				else {
-					// Property not initialized 
-
-					if (is_object($value)) $this->model = $value;
-					else throw new exception('Property "' . static::class . '::view" should store an instance of a model', 500);
-				}
-			})(),
-			'view' => (function () use ($value) {
-				if ($this->__isset('view')) throw new exception('Can not reinitialize property: ' . static::class . '::$view', 500);
-				else {
-					// Property not initialized 
-
-					if (is_object($value)) $this->view = $value;
-					else throw new exception('Property "' . static::class . '::view" should store an instance of a view template engine', 500);
-				}
-			})(),
-			default => throw new exception('Property "' . static::class . "::\$$name\" not found", 404)
-		};
+	public core $core {		
+		// Read
+		get => $this->core;
 	}
 
 	/**
-	 * Read property
+	 * Model
 	 *
-	 * @param string $name Name of the property
-	 *
-	 * @return mixed Value of the property
+	 * @var model $model An instance of the model connected in the core
 	 */
-	public function __get(string $name): mixed
-	{
-		return match ($name) {
-			'model' => $this->model ?? throw new exception('Property "' . static::class . '::$model" is not initialized', 500),
-			'view' => $this->view ?? throw new exception('Property "' . static::class . '::$view" is not initialized', 500),
-			default => throw new exception('Property "' . static::class . "::\$$name\" not found", 404)
-		};
+	public model $model {
+		// Write
+		set (model $model) {
+				$this->model ??= $model;
+		}
+
+		// Read
+		get => $this->model;
+	}
+
+	/**
+	 * View
+	 *
+	 * @var view $view View template engine instance (twig)
+	 */
+	public object $view {
+		// Write
+		set (object $view) {
+				$this->view ??= $view;
+		}
+
+		// Read
+		get => $this->view;
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param core $core The instance of the core
+	 *
+	 * @return self
+	 */
+	public function __construct(core $core) {
+		// Writing the core into the property
+		$this->core = $core;
 	}
 }
