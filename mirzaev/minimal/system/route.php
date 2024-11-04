@@ -13,7 +13,7 @@ namespace mirzaev\minimal;
  * @param array $parameters Arguments for the $this->method (will be concatenated together with generated request parameters)
  * @param array $options Options for `request_parse_body($options)`
  *
- * @method self __construct(string $controller,?string $method, ?string $model, array $variables, array $options) Constructor
+ * @method void __construct(string|controller $controller, ?string $method, string|model|null $model, array $parameters, array $options) Constructor
  *
  * @package mirzaev\minimal
  *
@@ -25,7 +25,7 @@ final class route
 	/**
 	 * Controller
 	 * 
-	 * @var string|model $controller Name of the controller or an instance of the controller
+	 * @var string|controller $controller Name of the controller or an instance of the controller
 	 */
 	public string|controller $controller {
 		// Read
@@ -54,38 +54,55 @@ final class route
 
 	/**
 	 * Parameters
+	 *
+	 * @see https://wiki.php.net/rfc/property-hooks (find a table about backed and virtual hooks)
 	 * 
 	 * @var array $parameters Arguments for the $this->method (will be concatenated together with generated request parameters)
 	 */
-	public array $parameters {
+	public array $parameters = [] {
 		// Read
-		get => $this->parameters;
+		&get => $this->parameters;
 	}
 
 	/**
 	 * Options
 	 *
-	 * Used only for GET, PUT, PATCH and DELETE
+	 * Required if $this->method !== method::post
+	 *
+	 * @see https://wiki.php.net/rfc/rfc1867-non-post about request_parse_body()
+	 * @see https://wiki.php.net/rfc/property-hooks (find a table about backed and virtual hooks)
+	 *
+	 * @throws exception_runtime if reinitialize the property
 	 * 
-	 * @var string $options Options for `request_parse_body($options)`
+	 * @var array $options Options for `request_parse_body($options)`
 	 */
 	public array $options {
 		// Write
-		set (array $value) => array_filter(
-			$value,
-			fn(string $key) => match ($key) {
-				'post_max_size',
-				'max_input_vars',
-				'max_multipart_body_parts',
-				'max_file_uploads',
-				'upload_max_filesize' => true,
-				default => false
-			},
-			ARRAY_FILTER_USE_KEY
-		);
+		set (array $value) {
+			if (isset($this->{__PROPERTY__})) {
+				// The property is already initialized
+
+				// Exit (fail)
+				throw new exception_runtime('The property is already initialized: ' . __PROPERTY__, status::internal_server_error->value);
+			}
+
+			// Writing
+			$this->options = array_filter(
+				$value,
+				fn(string $key) => match ($key) {
+					'post_max_size',
+					'max_input_vars',
+					'max_multipart_body_parts',
+					'max_file_uploads',
+					'upload_max_filesize' => true,
+					default => throw new exception_domain("Failed to recognize option: $key", status::internal_server_error->value)
+				},
+				ARRAY_FILTER_USE_KEY
+			);
+		}
 
 		// Read
-		get => $this->options;
+		get => $this->options ?? [];
 	}
 
 	/**
@@ -97,7 +114,7 @@ final class route
 	 * @param array $parameters Arguments for the $method (will be concatenated together with generated request parameters)
 	 * @param array $options Options for `request_parse_body` (Only for POST method)
 	 *
-	 * @return self
+	 * @return void
 	 */
 	public function __construct(
 		string|controller $controller,

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal\traits;
 
+// Files of the project
+use mirzaev\minimal\http\enumerations\status;
+
 // Built-in libraries
 use exception;
 
@@ -33,7 +36,7 @@ trait magic
 	public function __set(string $name, mixed $value = null): void
 	{
 		match ($name) {
-			default => throw new exception('Property "' . static::class . "::\$$name\" not found", 404)
+			default => throw new exception('Failed to find property: ' . static::class . "::\$$name", status::not_found->value)
 		};
 	}
 
@@ -47,7 +50,7 @@ trait magic
 	public function __get(string $name): mixed
 	{
 		return match ($name) {
-			default => throw new exception('Property "' . static::class . "::\$$name\" not found", 404)
+			default => throw new exception('Failed to find property: ' . static::class . "::\$$name", status::not_found->value)
 		};
 	}
 

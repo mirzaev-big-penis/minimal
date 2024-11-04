@@ -7,7 +7,9 @@ namespace mirzaev\minimal;
 // Files of the project
 use mirzaev\minimal\model,
 	mirzaev\minimal\core,
-	mirzaev\minimal\traits\magic;
+	mirzaev\minimal\traits\magic,
+	mirzaev\minimal\http\request,
+	mirzaev\minimal\http\enumerations\status;
 
 // Build-in libraries
 use exception;
@@ -16,12 +18,11 @@ use exception;
  * Controller
  *
  * @var core $core An instance of the core
+ * @var request $request Request
  * @var model $model An instance of the model connected in the core
  * @var view $view View template engine instance (twig)
- * @var core $core An instance of the core
- * @var core $core An instance of the core
  *
- * @method self __construct(core $core) Constructor
+ * @method void __construct(core $core) Constructor
  *
  * @package mirzaev\minimal
  *
@@ -40,6 +41,16 @@ class controller
 	public core $core {		
 		// Read
 		get => $this->core;
+	}
+
+	/**
+	 * Request
+	 *
+	 * @var request $request Request
+	 */
+	public request $request {		
+		// Read
+		get => $this->request;
 	}
 
 	/**
@@ -77,7 +88,7 @@ class controller
 	 *
 	 * @param core $core The instance of the core
 	 *
-	 * @return self
+	 * @return void
 	 */
 	public function __construct(core $core) {
 		// Writing the core into the property

@@ -10,7 +10,7 @@ use	mirzaev\minimal\traits\magic;
 /**
  * Model
  *
- * @method self __construct() Constructor
+ * @method void __construct() Constructor
  *
  * @package mirzaev\minimal
  *
@@ -24,7 +24,7 @@ class model
 	/**
 	 * Constructor
 	 *
-	 * @return self
+	 * @return void
 	 */
 	public function __construct() {}
 }

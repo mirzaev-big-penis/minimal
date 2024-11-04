@@ -6,6 +6,7 @@ namespace mirzaev\minimal;
 
 // Files of the project
 use mirzaev\minimal\route,
+	mirzaev\minimal\http\request,
 	mirzaev\minimal\traits\singleton;
 
 // Build-ing libraries
@@ -14,9 +15,10 @@ use InvalidArgumentException as exception_argument;
 /**
  * Router
  *
- * @param array $routes The registry of routes
+ * @param array $routes Registry of routes
  *
- * @method self write(string $uri, string $method)
+ * @method self write(string $urn, route $route, string|array $method) Write route to registry of routes (fluent interface)
+ * @method route|null match(request $request) Match request URI with registry of routes
  * @method self sort() Sort routes (DEV)
  * @method string universalize(string $urn) Universalize URN
  *
@@ -32,35 +34,38 @@ final class router
 	/**
 	 * Routes
 	 *
-	 * @var array $routes The registry of routes
+	 * @var array $routes Registry of routes
 	 */
-	protected array $routes = [];
+	protected array $routes = [] {
+		// Read
+		&get => $this->routes;
+	}
 
 	/**
-	 * Write a route
+	 * Write route
+	 *
+	 * Write route to registry of routes
 	 *
 	 * @param string $urn URN of the route ('/', '/page', '/page/$variable', '/page/$collector...'...)
 	 * @param route $route The route
-	 * @param string|array $method Method of requests (GET, POST, PUT, DELETE, COOKIE...)
+	 * @param string|array $method Method of requests
 	 *
 	 * @return self The instance from which the method was called (fluent interface)
 	 */
-	public function write(
-		string $urn,
-		route $route,
-		null|string|array $method = 'GET'
-	): self {
+	public function write(string $urn, route $route, string|array $method): self
+	{
 		foreach (is_array($method) ? $method : [$method] as $method) {
 			// Iterate over methods of requests
 
-			// Validating method
-			$method = match ($method) {
-				'POST', 'GET', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'CONNECT', 'TRACE' => $method,
-				default => throw new exception_argument("Failed to initialize method: \"$method\"")
-			};
+			// Initializing the request
+			$request = new request(
+				uri: $urn,
+				method: $method,
+				environment: false
+			);
 
 			// Writing to the registry of routes
-			$this->routes[$urn][$method] = $route;
+			$this->routes[$request->uri][$request->method->value] = $route;
 		}
 
 		// Exit (success) (fluent interface)
@@ -72,12 +77,12 @@ final class router
 	 *
 	 * Match request URI with registry of routes
 	 *
-	 * @param string $uri URI (protocol://domain/foo/bar)
-	 * @param string $method Method of the request (GET, POST, PUT...)
+	 * @param request $request The request
 	 *
 	 * @return route|null Route, if found
 	 */
-	public function match(string $uri, string $method): ?route {
+	public function match(request $request): ?route
+	{
 		// Declaration of the registry of routes directoies 
 		$routes = [];
 
@@ -93,7 +98,7 @@ final class router
 			// Initialized the registry of routes directoies
 
 			// Universalization of URN (/foo/bar)
-			$urn = self::universalize(parse_url(urldecode($uri), PHP_URL_PATH));
+			$urn = self::universalize(parse_url(urldecode($request->uri), PHP_URL_PATH));
 
 			// Search directories of URN (explode() creates empty value in array)
 			preg_match_all('/(^\/$|[^\/]+)/', $urn, $directories);
@@ -112,7 +117,7 @@ final class router
 				foreach ($this->routes as $route => $data) {
 					// Iteration over routes
 
-					if (isset($data[$method])) {
+					if (isset($data[$request->method->value])) {
 						// The request method matches the route method
 
 						// Universalization of route
@@ -173,12 +178,12 @@ final class router
 						// The directory is a variable ($variable)
 
 						// Запись в реестр переменных и перещапись директории в маршруте
-						$data[$method]->variables[trim($route_directory, '$')] = $directories[$i];
+						$data[$request->method->value]->variables[trim($route_directory, '$')] = $directories[$i];
 					} else if (preg_match('/^\$([a-zA-Z_\x80-\xff]+\.\.\.)$/', $route_directory) === 1) {
 						// The directory of route is a collector ($variable...)
 
 						// Инициализаия ссылки на массив сборщика
-						$collector = &$data[$method]->variables[trim($route_directory, '$.')];
+						$collector = &$data[$request->method->value]->variables[trim($route_directory, '$.')];
 
 						// Инициализаия массива сборщика
 						$collector ??= [];
@@ -198,7 +203,7 @@ final class router
 				}
 
 				// Exit (success or fail)
-				return $data[$method] ?? null;
+				return $data[$request->method->value] ?? null;
 			}
 		}
 
