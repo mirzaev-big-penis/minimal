@@ -20,6 +20,8 @@ use DomainException as exception_domain,
 /**
  * Response
  *
+ * @package mirzaev\minimal\http
+ *
  * @param protocol $protocol Version of HTTP protocol
  * @param status $status Status
  * @param array $headers Headers
@@ -37,8 +39,6 @@ use DomainException as exception_domain,
  * @method self clean() Delete everything in the output buffer
  * @method self end() Initializes response headers and flushes the output buffer
  *
- * @package mirzaev\minimal\http
- *
  * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>
  */
@@ -49,7 +49,6 @@ final class response
 	 *
 	 * @see https://wiki.php.net/rfc/property-hooks (find a table about backed and virtual hooks)
 	 * 
-	 * @throws exception_runtime if reinitialize the property
 	 * @throws exception_domain if failed to recognize HTTP version
 	 *
 	 * @var protocol $protocol Version of HTTP protocol
@@ -57,12 +56,6 @@ final class response
 	public protocol $protocol {
 		// Write
 		set (protocol|string $value) {
-			if (isset($this->{__PROPERTY__})) {
-				// The property is already initialized
-
-				// Exit (fail)
-				throw new exception_runtime('The property is already initialized: ' . __PROPERTY__, status::internal_server_error->value);
-			}
 
 			if ($value instanceof protocol) {
 				// Received implementation of HTTP version
@@ -95,7 +88,6 @@ final class response
 	 *
 	 * @see https://wiki.php.net/rfc/property-hooks (find a table about backed and virtual hooks)
 	 * 
-	 * @throws exception_runtime if reinitialize the property
 	 * @throws exception_domain if failed to recognize status
 	 *
 	 * @var status $status Status
@@ -103,12 +95,6 @@ final class response
 	public status $status {
 		// Write
 		set (status|string $value) {
-			if (isset($this->{__PROPERTY__})) {
-				// The property is already initialized
-
-				// Exit (fail)
-				throw new exception_runtime('The property is already initialized: ' . __PROPERTY__, status::internal_server_error->value);
-			}
 
 			if ($value instanceof status) {
 				// Received implementation of status
@@ -161,10 +147,10 @@ final class response
 		set (string $value) {
 			// Writing
 			$this->body = $value;
-		};
+		}
 
 		// Read
-		&get => $this->body;
+		get => $this->body;
 	}
 
 	/**
@@ -353,12 +339,42 @@ final class response
 	 *
 	 * Generates the status line (HTTP/2 200 OK)
 	 *
+	 * @param protocol|null $protocol Version of HTTP
+	 * @param status|null $status Status code and status text
+	 *
 	 * @return string The status line
 	 */
-	public function status(): string 
+	public function status(?protocol $protocol = null, ?status $status = null): string 
 	{
+		// Declaring buffer of status line
+		$buffer = '';
+
+		if ($protocol instanceof protocol) {
+			// Received version of HTTP
+
+			// Writing to buffer of status line
+			$buffer .= $protocol->value . ' ';
+		} else {
+			// Not received version of HTTP
+
+			// Writing to buffer of status line
+			$buffer .= $this->protocol->value . ' ';
+		}
+
+		if ($status instanceof status) {
+			// Received status
+
+			// Writing to buffer of status line
+			$buffer .= $status->value . ' ' . $status->label();
+		} else {
+			// Not received status
+
+			// Writing to buffer of status line
+			$buffer .= $this->status->value . ' ' . $this->status->label();
+		}
+
 		// Exit (success)
-		return $this->protocol->value . ' ' . $this->status->value . ' ' . $this->status->label();
+		return $buffer;
 	}
 
   /**

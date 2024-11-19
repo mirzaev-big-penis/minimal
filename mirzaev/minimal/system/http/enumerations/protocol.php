@@ -16,9 +16,9 @@ namespace mirzaev\minimal\http\enumerations;
  */
 enum protocol: string
 {
-	case HTTP_3 = 'HTTP/3';
-	case HTTP_2 = 'HTTP/2';
-	case HTTP_1_1 = 'HTTP/1.1';
-	case HTTP_1_0 = 'hTTP/1.0';
-	case HTTP_0_9 = 'HTTP/0.9';
+	case http_3 = 'HTTP/3';
+	case http_2 = 'HTTP/2';
+	case http_1_1 = 'HTTP/1.1';
+	case http_1 = 'hTTP/1.0';
+	case http_0_9 = 'HTTP/0.9';
 }

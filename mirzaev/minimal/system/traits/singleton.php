@@ -10,9 +10,9 @@ use exception;
 /**
  * Trait of singleton
  *
- * @method static initialize() Initialize an instance
- *
  * @package mirzaev\minimal\traits
+ *
+ * @method static initialize() Initialize an instance
  *
  * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>

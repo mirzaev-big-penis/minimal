@@ -15,14 +15,14 @@ use InvalidArgumentException as exception_argument;
 /**
  * Router
  *
+ * @package mirzaev\minimal
+ *
  * @param array $routes Registry of routes
  *
  * @method self write(string $urn, route $route, string|array $method) Write route to registry of routes (fluent interface)
  * @method route|null match(request $request) Match request URI with registry of routes
  * @method self sort() Sort routes (DEV)
  * @method string universalize(string $urn) Universalize URN
- *
- * @package mirzaev\minimal
  *
  * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>

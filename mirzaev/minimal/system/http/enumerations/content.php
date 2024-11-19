@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace mirzaev\minimal\http\enumerations;
 
+// Files of the project
+use mirzaev\minimal\http\enumerations\status;
+
+// Built-in libraries
+use InvalidArgumentException as exception_argument,
+	DomainException as exception_domain;
+
 /**
  * Content
  *
@@ -18,7 +25,7 @@ enum content: string
 {
 	case any = '*/*';
 
-	// Text
+		// Text
 
 	case txt = 'text/plain';
 	case css = 'text/css';
@@ -26,7 +33,7 @@ enum content: string
 	case html = 'text/html';
 	case js = 'text/javascript'; // js + mjs (https://www.rfc-editor.org/rfc/rfc9239#name-text-javascript)
 
-	// Applications
+		// Applications
 
 	case binary = 'application/octet-stream';
 	case encoded = 'application/x-www-form-urlencoded';
@@ -49,7 +56,7 @@ enum content: string
 	case sh = 'application/x-sh';
 	case xhtml = 'application/xhtml+xml';
 
-	// Audio
+		// Audio
 
 	case aac = 'audio/aac';
 	case mp3 = 'audio/mpeg';
@@ -57,8 +64,8 @@ enum content: string
 	case oga = 'audio/ogg';
 	case weba = 'audio/webm';
 
-	// Images
-	
+		// Images
+
 	case gif = 'image/gif';
 	case jpeg = 'image/jpeg';
 	case png = 'image/png';
@@ -70,25 +77,46 @@ enum content: string
 	case bmp = 'image/bmp';
 	case ico = 'image/vnd.microsoft.icon';
 
-	// Videos
-	
+		// Videos
+
 	case avi = 'video/x-msvideo';
 	case mp4 = 'video/mp4';
 	case mpeg = 'video/mpeg';
 	case ogv = 'video/ogg';
 	case ts = 'video/mp2t';
 
-	// Fonts
-	
+		// Fonts
+
 	case otf = 'font/otf';
 	case ttf = 'font/ttf';
 	case woff = 'font/woff';
 	case woff2 = 'font/woff2';
 
-	// Multipart
-	
+		// Multipart
+
 	case form = 'multipart/form-data';
 	case mixed = 'multipart/mixed';
 	case alternative = 'multipart/alternative';
 	case related = 'multipart/related';
+
+	/**
+	 * Extension
+	 *
+	 * Returns the file extension without a dot
+	 *
+	 * @throws exception_argument if content can not have file extension
+	 * @throws exception_domain if failed to recognize content
+	 *
+	 * @return string File extension
+	 */
+	public function extension(): string
+	{
+		// Exit (success)
+		return match ($this) {
+			self::jpeg => 'jpg',
+			self::png => 'png',
+			self::form, self::mixed, self::alternative, self::related => throw new exception_argument('Content can not have file extension', status::internal_server_error->value),
+			default => throw new exception_domain('Failed to recognize content: ' . $this->value, status::not_found->value)
+		};
+	}
 }

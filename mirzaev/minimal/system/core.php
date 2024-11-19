@@ -15,6 +15,7 @@ use mirzaev\minimal\router,
 
 // Built-in libraries
 use exception,
+	RuntimeException as exception_runtime,
 	BadMethodCallException as exception_method,
 	DomainException as exception_domain,
 	InvalidArgumentException as exception_argument,
@@ -24,6 +25,8 @@ use exception,
 
 /**
  * Core
+ *
+ * @package mirzaev\minimal
  *
  * @param string $namespace Namespace where the core was initialized from
  * @param controller $controller An instance of the controller
@@ -35,8 +38,6 @@ use exception,
  * @method string|null start() Initialize request by environment and handle it
  * @method string|null request(request $request, array $parameters = []) Handle request
  * @method string|null route(route $route, string $method) Handle route
- *
- * @package mirzaev\minimal
  *
  * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>
@@ -193,6 +194,9 @@ final class core
 		// Deinitializing name of the controller class
 		unset($controller);
 
+		if (!isset($route->controller->model)) {
+		//
+
 		// Initializing name if the model class
 		$model = $route->model;
 
@@ -219,6 +223,7 @@ final class core
 			// Writing the model to the controller
 			$route->controller->model = $route->model;
 		}
+}
 
 		// Writing the request to the controller
 		$route->controller->request = $request;
@@ -226,8 +231,16 @@ final class core
 		if (method_exists($route->controller, $route->method)) {
 			// Found the method of the controller
 
-			// Executing method of the controller and exit (success)
-			return $route->controller->{$route->method}(...($route->parameters + $request->parameters));
+			try {
+				// Executing method of the controller and exit (success)
+				return $route->controller->{$route->method}(...($route->parameters + $request->parameters));
+			} catch (exception $e) {
+				// Catched an exception
+
+				// Exit (fail)
+				throw new exception_runtime(...$e);
+			}
+
 		} else {
 			// Not found the method of the controller
 		

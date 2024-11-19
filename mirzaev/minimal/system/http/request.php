@@ -20,6 +20,8 @@ use DomainException as exception_domain,
 /**
  * Request
  *
+ * @package mirzaev\minimal\http
+ *
  * @param method $method Method
  * @param string $uri URI
  * @param protocol $protocol Version of HTTP protocol
@@ -31,8 +33,6 @@ use DomainException as exception_domain,
  * @method void __construct(method|string|null $method, ?string $uri, protocol|string|null $protocol,	array $headers,	array $parameters, array $files, bool $environment) Constructor
  * @method response response() Generate response for request
  * @method self header(string $name, string $value) Write a header to the headers property
- *
- * @package mirzaev\minimal\http
  *
  * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>

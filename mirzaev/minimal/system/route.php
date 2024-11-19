@@ -7,6 +7,8 @@ namespace mirzaev\minimal;
 /**
  * Route
  *
+ * @package mirzaev\minimal
+ *
  * @param string|controller $controller Name of the controller
  * @param string $method Name of the method of the method of $this->controller
  * @param string|model $model Name of the model
@@ -14,8 +16,6 @@ namespace mirzaev\minimal;
  * @param array $options Options for `request_parse_body($options)`
  *
  * @method void __construct(string|controller $controller, ?string $method, string|model|null $model, array $parameters, array $options) Constructor
- *
- * @package mirzaev\minimal
  *
  * @license http://www.wtfpl.net/ Do What The Fuck You Want To Public License
  * @author Arsen Mirzaev Tatyano-Muradovich <arsen@mirzaev.sexy>
