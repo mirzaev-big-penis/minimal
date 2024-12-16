@@ -195,35 +195,35 @@ final class core
 		unset($controller);
 
 		if (!isset($route->controller->model)) {
-		//
+			// Not initialized the model in the controller
 
-		// Initializing name if the model class
-		$model = $route->model;
+			// Initializing name if the model class
+			$model = $route->model;
 
-		if ($route->model instanceof model) {
-			// Initialized the model
-		} else if (class_exists($model = "$this->namespace\\models\\$model")) {
-			// Found the model by its name
+			if ($route->model instanceof model) {
+				// Initialized the model
+			} else if (class_exists($model = "$this->namespace\\models\\$model")) {
+				// Found the model by its name
 
-			// Initializing the model
-			$route->model = new $model;
-		} else if (!empty($route->model)) {
-			// Not found the model and $route->model has a value
+				// Initializing the model
+				$route->model = new $model;
+			} else if (!empty($route->model)) {
+				// Not found the model and $route->model has a value
 
-			// Exit (fail)
-			throw new exception_domain("Failed to find the model: $model", status::not_implemented->value);
+				// Exit (fail)
+				throw new exception_domain("Failed to find the model: $model", status::not_implemented->value);
+			}
+
+			// Deinitializing name of the model class
+			unset($model);
+
+			if ($route->model instanceof model) {
+				// Initialized the model
+
+				// Writing the model to the controller
+				$route->controller->model = $route->model;
+			}
 		}
-
-		// Deinitializing name of the model class
-		unset($model);
-
-		if ($route->model instanceof model) {
-			// Initialized the model
-
-			// Writing the model to the controller
-			$route->controller->model = $route->model;
-		}
-}
 
 		// Writing the request to the controller
 		$route->controller->request = $request;
@@ -234,11 +234,11 @@ final class core
 			try {
 				// Executing method of the controller and exit (success)
 				return $route->controller->{$route->method}(...($route->parameters + $request->parameters));
-			} catch (exception $e) {
+			} catch (exception $exception) {
 				// Catched an exception
 
 				// Exit (fail)
-				throw new exception_runtime(...$e);
+				throw new exception_runtime('Caught an error while processing the route', status::internal_server_error->value, $exception);
 			}
 
 		} else {
